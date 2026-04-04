@@ -237,6 +237,16 @@ INSERT INTO Course (Mnemonic, Name, Faculty) VALUES
 ('INFO-H417', 'Robotique', 'Sciences'),
 ('INFO-H423', 'Projet de développement', 'Sciences');
 
+INSERT INTO Action (Description, XpGain, CoinGain) VALUES
+('Publication d’un résumé', 100, 50),
+('Évaluation d’un résumé', 10, 5),
+('Commentaire constructif reçu', 20, 10),
+('Inscription sur la plateforme', 50, 20),
+('Résumé signalé (sanction)', -50, -25),
+('Achat d’un titre cosmétique', 5, 0),
+('Résumé mis en favori par un tiers', 15, 10),
+('Première connexion de la journée', 5, 2);
+
 SELECT 'Base de données créée avec succès!' AS Message;
 SHOW TABLES;
 

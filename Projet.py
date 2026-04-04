@@ -18,10 +18,11 @@ CMD_EXIT = "exit"
 CMD_LIST = "list"
 CMD_COURS = "ajouter"
 CMD_PROFIL = "profil"
+CMD_PUBLIER = "publier"
 
-def get_table_length():
+def get_table_length(table):
     cursor = connection.cursor()
-    query = "SELECT COUNT(*) FROM User"
+    query = f"SELECT COUNT(*) FROM {table}"
     
     cursor.execute(query)
     result = cursor.fetchone()
@@ -29,7 +30,8 @@ def get_table_length():
     
     return result[0]
 
-userId_counter = get_table_length()
+userId_counter = get_table_length("User")
+summaryId_counter = get_table_length("Summary")
 
 class DataUser:
     def __init__(self, username: str, password: str, email: str, date_="2026-04-03", points=0, Xp=0, title="Null", id=-1):
@@ -61,6 +63,24 @@ class DataUser:
         print(f"Title: {self.title}")
         print(f"XP: {self.Xp}")
     
+    def reload_user(self):
+        if connection.is_connected():
+            cursor = connection.cursor(dictionary=True)
+            try:
+                query = "SELECT Points, Xp, Title FROM User WHERE UID = %s"
+                cursor.execute(query, (self.getId(),))
+                result = cursor.fetchone()
+                
+                if result:
+                    self.points = result["Points"]
+                    self.Xp = result["Xp"]
+                    self.title = result["Title"]
+                
+            except mysql.connector.Error as err:
+                print(f"Erreur lors du reload : {err}")
+            finally:
+                cursor.close()
+    
     # Méthode __str__ pour print() direct
     def __str__(self):
         """Retourne une représentation string de l'utilisateur"""
@@ -80,10 +100,19 @@ def register(userName: str, password: str, email: str) -> DataUser:
         cursor = connection.cursor(dictionary=True)
         query = "INSERT INTO User (UID, UName, Pass, Email, RegistrationDate, Points, Xp, Title) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
         val = (u.getId(), u.getUsername(), u.password, u.getEmail(), u.date_, u.getPoints(), u.getXp(), u.getTitle())
-        
+        query2 = """
+            UPDATE User
+            SET Xp = Xp + (SELECT XpGain FROM Action WHERE Description = %s),
+                Points = Points + (SELECT CoinGain FROM Action WHERE Description = %s)
+            WHERE UID = %s
+        """
+        val2 = ('Inscription sur la plateforme','Inscription sur la plateforme',u.getId())
         try:
             cursor.execute(query, val)
-            connection.commit()  # OBLIGATOIRE pour sauvegarder
+            connection.commit()
+            cursor.execute(query2,val2)
+            connection.commit()
+            u.reload_user()
             print(f"Utilisateur {userName} enregistré avec succès !")
         except mysql.connector.Error as err:
             print(f"Erreur d'insertion : {err}")
@@ -141,6 +170,19 @@ def ajoutCours(newMnemonic: str,newName: str,faculty: str):
         finally:
             cursor.close()
 
+def publierResumer(authorID: int, mnemonique:str,title:str,desc:str,visiblity = "private"):
+     if connection.is_connected():
+        cursor = connection.cursor(dictionary=True)
+        query = "INSERT INTO Summary (SID,AuthorID,Course,PublicationDate,Title,Description,Version,Visibility) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+        val = (get_table_length("Summary"),authorID,mnemonique,date.today(),title,desc,"1.0",visiblity)
+        try:
+            cursor.execute(query, val)
+            connection.commit()
+            print("Résumé avec le titre : {title} a été enregistré pour le cours {mnemonique} avec succès !")
+        except mysql.connector.Error as err:
+            print(f"Erreur d'insertion : {err}")
+        finally:
+            cursor.close()
 
 def main():
     isActive = True
@@ -170,6 +212,14 @@ def main():
             ajoutCours(newMnemonic,newName,faculty)
         elif request == CMD_PROFIL and connected == 1:
             print(f"\n{CurrentUser}")
+        elif request == CMD_PUBLIER and connected == 1:
+            newMnemonic = input("Mnemonic : ")
+            newTitle = input("Title : ")
+            newDesc = input("Desc : ")
+            newVisibility = input("Visibility (default = private) :")
+            if (newVisibility == ""):
+                newVisibility = "private"
+            publierResumer(CurrentUser.getId(),newMnemonic,newTitle,newDesc,newVisibility)
         elif request == CMD_EXIT:
             isActive = False
             connection.close()
