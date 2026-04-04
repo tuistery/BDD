@@ -1,5 +1,6 @@
 import mysql.connector
 from datetime import date
+import bcrypt
 
 # Connexion globale
 connection = mysql.connector.connect(
@@ -18,9 +19,9 @@ CMD_LIST = "list"
 CMD_COURS = "ajouter"
 CMD_PROFIL = "profil"
 
-def get_table_length(table_name: str):
+def get_table_length():
     cursor = connection.cursor()
-    query = f"SELECT COUNT(*) FROM {table_name}"
+    query = "SELECT COUNT(*) FROM User"
     
     cursor.execute(query)
     result = cursor.fetchone()
@@ -28,7 +29,7 @@ def get_table_length(table_name: str):
     
     return result[0]
 
-userId_counter = get_table_length("User")
+userId_counter = get_table_length()
 
 class DataUser:
     def __init__(self, username: str, password: str, email: str, date_="2026-04-03", points=0, Xp=0, title="Null", id=-1):
@@ -71,10 +72,12 @@ class DataUser:
         return f"DataUser(id={self.userId}, username='{self.username}', points={self.points}, title='{self.title}', Xp={self.Xp})"
 
 def register(userName: str, password: str, email: str) -> DataUser:
-    u = DataUser(userName, password, email,date.today())
+    password = password.encode('utf-8')
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password, salt)
+    u = DataUser(userName, hashed, email,date.today())
     if connection.is_connected():
         cursor = connection.cursor(dictionary=True)
-        # Ajout du VALUES et des %s
         query = "INSERT INTO User (UID, UName, Pass, Email, RegistrationDate, Points, Xp, Title) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
         val = (u.getId(), u.getUsername(), u.password, u.getEmail(), u.date_, u.getPoints(), u.getXp(), u.getTitle())
         
@@ -89,6 +92,7 @@ def register(userName: str, password: str, email: str) -> DataUser:
     return u
 
 def login(userName: str, password: str) -> DataUser:
+    password = password.encode('utf-8')
     if connection.is_connected():
         cursor = connection.cursor(dictionary=True)
         query = "SELECT * FROM User WHERE UName = %s"
@@ -96,7 +100,7 @@ def login(userName: str, password: str) -> DataUser:
         resultat = cursor.fetchone()
         cursor.close()
 
-        if resultat and resultat["Pass"] == password:
+        if resultat and  bcrypt.checkpw(password, resultat["Pass"].encode('utf-8')):
             print("Le login a fonctionné avec succès")
             return DataUser(
                 resultat["UName"], 
@@ -130,7 +134,7 @@ def ajoutCours(newMnemonic: str,newName: str,faculty: str):
         val = (newMnemonic,newName,faculty)
         try:
             cursor.execute(query, val)
-            connection.commit()  # OBLIGATOIRE pour sauvegarder
+            connection.commit()
             print(f"Cours {newName} enregistré avec succès !")
         except mysql.connector.Error as err:
             print(f"Erreur d'insertion : {err}")
