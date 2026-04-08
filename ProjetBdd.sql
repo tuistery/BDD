@@ -22,6 +22,7 @@ CREATE TABLE AcademicYear (
 CREATE TABLE Course (
     Mnemonic VARCHAR(20) PRIMARY KEY,
     Name VARCHAR(255) NOT NULL,
+    Credits INT NOT NULL,
     Faculty VARCHAR(100)
 ) ENGINE=InnoDB;
 
@@ -199,43 +200,65 @@ CREATE INDEX idx_summary_author ON Summary(AuthorID);
 CREATE INDEX idx_transaction_user ON Transaction(UID);
 CREATE INDEX idx_contribution_user ON Contribution(UID);
 
+INSERT INTO Course (Mnemonic, Name, Credits, Faculty) VALUES
+-- Cours d'Informatique
+('INFOH100', 'Introduction à la programmation', 5, 'Informatique'),
+('INFOH101', 'Algorithmique', 5, 'Informatique'),
+('INFOH102', 'Structures de données', 5, 'Informatique'),
+('INFOH200', 'Programmation orientée objet', 5, 'Informatique'),
+('INFOH201', 'Programmation avancée', 5, 'Informatique'),
+('INFOH202', 'Développement web', 5, 'Informatique'),
+('INFOH203', 'Bases de données avancées', 5, 'Informatique'),
+('INFOH300', 'Systèmes d\'exploitation', 5, 'Informatique'),
+('INFOH301', 'Réseaux informatiques', 5, 'Informatique'),
+('INFOH302', 'Sécurité informatique', 5, 'Informatique'),
+('INFOH303', 'Bases de données', 5, 'Informatique'),
+('INFOH304', 'Génie logiciel', 5, 'Informatique'),
+('INFOH305', 'Architecture des ordinateurs', 5, 'Informatique'),
+('INFOH306', 'Compilation', 5, 'Informatique'),
+('INFOH307', 'Programmation concurrente', 5, 'Informatique'),
+('INFOH308', 'Cloud computing', 5, 'Informatique'),
+('INFOH309', 'Big Data', 5, 'Informatique'),
+('INFOH310', 'Machine learning', 5, 'Informatique'),
+('INFOH311', 'Intelligence artificielle', 5, 'Informatique'),
+('INFOH312', 'Vision par ordinateur', 5, 'Informatique'),
 
-INSERT INTO Course (Mnemonic, Name, Faculty) VALUES
-('INFO-F101', 'Programmation', 'Sciences'),
-('INFO-F102', 'Informatique et méthodes numériques', 'Sciences'),
-('MATH-F113', 'Mathématiques générales I', 'Sciences'),
-('MATH-F114', 'Mathématiques générales II', 'Sciences'),
-('PHYS-F101', 'Physique I', 'Sciences'),
-('PHYS-F102', 'Physique II', 'Sciences'),
-('INFO-F201', 'Calculabilité', 'Sciences'),
-('INFO-F202', 'Systèmes d\'exploitation', 'Sciences'),
-('INFO-F203', 'Algorithmique et structures de données', 'Sciences'),
-('INFO-F205', 'Introduction aux bases de données', 'Sciences'),
-('INFO-F209', 'Programmation orientée objet', 'Sciences'),
-('MATH-F205', 'Probabilités et statistique', 'Sciences'),
-('INFO-F301', 'Compilation', 'Sciences'),
-('INFO-F302', 'Réseaux informatiques', 'Sciences'),
-('INFO-F303', 'Bases de données', 'Sciences'),
-('INFO-F307', 'Théorie des langages', 'Sciences'),
-('INFO-F308', 'Architecture des ordinateurs', 'Sciences'),
-('INFO-F309', 'Génie logiciel', 'Sciences'),
-('INFO-F401', 'Intelligence artificielle', 'Sciences'),
-('INFO-F403', 'Introduction à l\'algorithmique', 'Sciences'),
-('INFO-F404', 'Techniques de l\'intelligence artificielle', 'Sciences'),
-('INFO-F405', 'Sécurité informatique', 'Sciences'),
-('INFO-F408', 'Programmation de systèmes mobiles', 'Sciences'),
-('INFO-F409', 'Apprentissage automatique', 'Sciences'),
-('INFO-F410', 'Techniques avancées de programmation', 'Sciences'),
-('INFO-F501', 'Compression de données', 'Sciences'),
-('INFO-F505', 'Cloud computing et virtualisation', 'Sciences'),
-('INFO-F514', 'Big Data', 'Sciences'),
-('INFO-H515', 'Projet d\'informatique', 'Sciences'),
-('INFO-Y080', 'Mémoire de fin d\'études', 'Sciences'),
-('INFO-F422', 'Systèmes informatiques', 'Sciences'),
-('INFO-F424', 'Calcul scientifique', 'Sciences'),
-('INFO-H415', 'Analyse de données complexes', 'Sciences'),
-('INFO-H417', 'Robotique', 'Sciences'),
-('INFO-H423', 'Projet de développement', 'Sciences');
+-- Cours de Mathématiques
+('MATH100', 'Mathématiques discrètes', 5, 'Mathématiques'),
+('MATH101', 'Analyse 1', 5, 'Mathématiques'),
+('MATH102', 'Analyse 2', 5, 'Mathématiques'),
+('MATH200', 'Algèbre linéaire', 5, 'Mathématiques'),
+('MATH201', 'Probabilités', 5, 'Mathématiques'),
+('MATH202', 'Statistiques', 5, 'Mathématiques'),
+('MATH203', 'Optimisation', 5, 'Mathématiques'),
+('MATH204', 'Processus stochastiques', 5, 'Mathématiques'),
+
+-- Cours de Sciences (Physique)
+('PHYS100', 'Physique générale', 5, 'Sciences'),
+('PHYS101', 'Mécanique', 5, 'Sciences'),
+('PHYS102', 'Électricité et magnétisme', 5, 'Sciences'),
+('PHYS200', 'Thermodynamique', 5, 'Sciences'),
+('PHYS201', 'Optique', 5, 'Sciences'),
+
+-- Cours d'Économie
+('ECON100', 'Introduction à l\'économie', 5, 'Économie'),
+('ECON101', 'Microéconomie', 5, 'Économie'),
+('ECON102', 'Macroéconomie', 5, 'Économie'),
+('ECON200', 'Économie internationale', 5, 'Économie'),
+('ECON201', 'Économétrie', 5, 'Économie'),
+
+-- Cours de Langues
+('LANG100', 'Anglais académique', 3, 'Langues'),
+('LANG101', 'Communication écrite', 3, 'Langues'),
+('LANG102', 'Communication orale', 3, 'Langues'),
+('LANG200', 'Anglais avancé', 3, 'Langues'),
+('LANG201', 'Rédaction scientifique', 3, 'Langues'),
+
+-- Cours de Gestion
+('MGMT100', 'Introduction au management', 5, 'Gestion'),
+('MGMT200', 'Gestion de projet', 5, 'Gestion'),
+('MGMT201', 'Entrepreneuriat', 5, 'Gestion'),
+('MGMT202', 'Management stratégique', 5, 'Gestion');
 
 INSERT INTO Action (Description, XpGain, CoinGain) VALUES
 ('Publication d’un résumé', 100, 50),

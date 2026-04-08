@@ -19,6 +19,7 @@ CMD_LIST = "list"
 CMD_COURS = "ajouter"
 CMD_PROFIL = "profil"
 CMD_PUBLIER = "publier"
+CMD_CONSULTER = "get"
 
 def get_table_length(table):
     cursor = connection.cursor()
@@ -178,17 +179,53 @@ def publierResumer(authorID: int, mnemonique:str,title:str,desc:str,visiblity = 
         try:
             cursor.execute(query, val)
             connection.commit()
-            print("Résumé avec le titre : {title} a été enregistré pour le cours {mnemonique} avec succès !")
+            print(f"Résumé avec le titre : {title} a été enregistré pour le cours {mnemonique} avec succès !")
         except mysql.connector.Error as err:
             print(f"Erreur d'insertion : {err}")
         finally:
             cursor.close()
 
+def consulterResumé(mnemonic:str):
+    if connection.is_connected():
+        cursor = connection.cursor(dictionary=True)
+        query = "SELECT * FROM Summary WHERE Course = %s"
+        try:
+            cursor.execute(query, (mnemonic,))
+            resultat = cursor.fetchall()
+            connection.commit()
+            print(f"Demande de tout les resumés du cours : {mnemonic} avec succès !")
+        except mysql.connector.Error as err:
+            print(f"Erreur de select : {err}")
+        finally:
+            cursor.close()
+    return resultat
+
+def ajoutPoints(typeAction:str,id:int):
+    if connection.is_connected():
+        cursor = connection.cursor(dictionary=True)
+        query = """
+            UPDATE User
+            SET Xp = Xp + (SELECT XpGain FROM Action WHERE Description = %s),
+                Points = Points + (SELECT CoinGain FROM Action WHERE Description = %s)
+            WHERE UID = %s
+        """
+        val = (typeAction,typeAction,id)
+    try:
+        cursor.execute(query, val)
+        connection.commit()
+        print(f"Ajout des points et de l'xp a l'utilisateur {id} avec succès !")
+    except mysql.connector.Error as err:
+        print(f"Erreur de select : {err}")
+    finally:
+        cursor.close()
+    
+        
+
 def main():
     isActive = True
     connected = 0
     while isActive:
-        request = input("\nNouvelle commande (connect / list / ajouter / profil / exit) : ").strip().lower()
+        request = input("\nNouvelle commande (connect / list / ajouter / profil / publier / get / exit) : ").strip().lower()
         
         if request == CMD_CONNECT and connected == 0:
             Ctype = input("Register or Login : ").strip().lower()
@@ -197,12 +234,14 @@ def main():
                 userName = input("Username : ")
                 PassWord = input("Password : ")
                 CurrentUser = register(userName, PassWord, eMail)
-                connected = 1
+                if CurrentUser != None:
+                    connected = 1
             elif Ctype == CMD_LOGIN:
                 userName = input("Username : ")
                 PassWord = input("Password : ")
                 CurrentUser= login(userName, PassWord)
-                connected = 1
+                if CurrentUser != None:
+                    connected = 1
         elif request == CMD_LIST and connected == 1:
             print(getListCours())
         elif request == CMD_COURS and connected == 1:
@@ -220,6 +259,11 @@ def main():
             if (newVisibility == ""):
                 newVisibility = "private"
             publierResumer(CurrentUser.getId(),newMnemonic,newTitle,newDesc,newVisibility)
+            ajoutPoints("Publication d’un résumé",CurrentUser.getId())
+            CurrentUser.reload_user()
+        elif request == CMD_CONSULTER and connected == 1:
+            mnemonic = input("Quel cours voulez voir les résumés ? : ").strip().capitalize()
+            print(consulterResumé(mnemonic))
         elif request == CMD_EXIT:
             isActive = False
             connection.close()
