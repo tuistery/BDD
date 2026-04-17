@@ -86,6 +86,17 @@ CREATE TABLE Transaction (
     FOREIGN KEY (UID) REFERENCES User(UID) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE Notes (
+    NID VARCHAR(50),
+    UID VARCHAR(50),
+    SID VARCHAR(50),
+    Note INT,
+    Comment VARCHAR(255),
+    PRIMARY KEY (UID, SID),
+    FOREIGN KEY (UID) REFERENCES User(UID) ON DELETE CASCADE,
+    FOREIGN KEY (SID) REFERENCES Summary(SID) ON DELETE CASCADE 
+ ) ENGINE=InnoDB;
+
 -- Table Object
 CREATE TABLE Object (
     OID VARCHAR(50) PRIMARY KEY,
@@ -269,6 +280,97 @@ INSERT INTO Action (Description, XpGain, CoinGain) VALUES
 ('Achat d’un titre cosmétique', 5, 0),
 ('Résumé mis en favori par un tiers', 15, 10),
 ('Première connexion de la journée', 5, 2);
+
+-- Table Object (TOUS les objets)
+INSERT INTO Object (OID, Price, Name, Description) VALUES
+('1', 50.00, 'Débutant', 'Attribué aux nouveaux contributeurs'),
+('2', 100.00, 'Apprenti', 'Premier niveau de contribution'),
+('3', 200.00, 'Contributeur actif', 'Publie régulièrement des résumés'),
+('4', 500.00, 'Contributeur expert', 'Publie des résumés de qualité'),
+('5', 1000.00, 'Expert SQL', 'Maîtrise des bases de données'),
+('6', 1500.00, 'Top Contributeur', 'Parmi les meilleurs utilisateurs'),
+('7', 2000.00, 'Maître du savoir', 'Expert académique reconnu'),
+('8', 3000.00, 'Légende du campus', 'Statut exceptionnel'),
+('9', 300.00, 'Profil sombre', 'Thème sombre pour le profil'),
+('10', 300.00, 'Profil clair', 'Thème clair alternatif'),
+('11', 400.00, 'Thème nuit', 'Interface nocturne'),
+('12', 400.00, 'Thème pastel', 'Couleurs douces'),
+('13', 150.00, 'Icône étoile', 'Icône spéciale'),
+('14', 200.00, 'Icône flamme', 'Activité élevée'),
+('15', 250.00, 'Icône trophée', 'Symbole de réussite'),
+('16', 150.00, 'Icône livre', 'Passion pour l\'étude'),
+('17', 300.00, 'Icône cerveau', 'Intellect élevé'),
+('18', 400.00, 'Badge bronze', 'Badge bronze'),
+('19', 800.00, 'Badge argent', 'Badge argent'),
+('20', 1200.00, 'Badge or', 'Badge or'),
+('21', 2000.00, 'Badge diamant', 'Badge premium'),
+('22', 100.00, 'Cadre simple', 'Cadre basique'),
+('23', 600.00, 'Cadre premium', 'Cadre avancé'),
+('24', 1200.00, 'Cadre doré', 'Cadre luxueux'),
+('25', 700.00, 'Effet brillant', 'Effet visuel'),
+('26', 900.00, 'Effet feu', 'Effet animé'),
+('27', 900.00, 'Effet glace', 'Effet givré'),
+('28', 800.00, 'Titre étudiant modèle', 'Utilisateur exemplaire'),
+('29', 1200.00, 'Titre mentor', 'Aide les autres'),
+('30', 2000.00, 'Titre professeur', 'Très expérimenté'),
+('31', 1100.00, 'Badge IA', 'Spécialiste IA'),
+('32', 900.00, 'Badge math', 'Expert mathématiques'),
+('33', 900.00, 'Badge physique', 'Expert physique'),
+('34', 900.00, 'Badge économie', 'Expert économie'),
+('35', 300.00, 'Icône fusée', 'Progression rapide'),
+('36', 300.00, 'Icône éclair', 'Réactivité'),
+('37', 300.00, 'Icône cible', 'Précision'),
+('38', 800.00, 'Thème sombre premium', 'Thème sombre avancé'),
+('39', 900.00, 'Thème néon', 'Couleurs flashy'),
+('40', 2500.00, 'Titre VIP', 'Utilisateur premium'),
+('41', 3000.00, 'Titre élite', 'Top utilisateurs'),
+('42', 150.00, 'Badge participation', 'Participation active'),
+('43', 300.00, 'Badge fidélité', 'Utilisateur régulier'),
+('44', 700.00, 'Cadre arc-en-ciel', 'Cadre coloré'),
+('45', 1000.00, 'Effet holographique', 'Effet futuriste');
+
+-- Table Badge (type="badge")
+INSERT INTO Badge (OID, Symbol) VALUES
+('1', '🎓'),
+('2', '📚'),
+('3', '✨'),
+('4', '⭐'),
+('5', '🗄️'),
+('18', '🥉'),
+('19', '🥈'),
+('20', '🥇'),
+('21', '💎'),
+('31', '🤖'),
+('32', '➕'),
+('33', '⚛️'),
+('34', '📈'),
+('42', '👥'),
+('43', '🔥');
+
+-- Table Title (type="titre")
+INSERT INTO Title (OID, Label) VALUES
+('1', 'Débutant'),
+('2', 'Apprenti'),
+('3', 'Contributeur actif'),
+('4', 'Contributeur expert'),
+('5', 'Expert SQL'),
+('6', 'Top Contributeur'),
+('7', 'Maître du savoir'),
+('8', 'Légende du campus'),
+('28', 'Étudiant modèle'),
+('29', 'Mentor'),
+('30', 'Professeur'),
+('40', 'VIP'),
+('41', 'Élite');
+
+-- Table Theme (type="theme")
+INSERT INTO Theme (OID, Colors) VALUES
+('9', '#1a1a1a,#ffffff'),
+('10', '#ffffff,#000000'),
+('11', '#0a0a0a,#16213e'),
+('12', '#ffd1dc,#c9a0dc'),
+('38', '#0d0d0d,#2a2a2a'),
+('39', '#ff00ff,#00ffff');
 
 SELECT 'Base de données créée avec succès!' AS Message;
 SHOW TABLES;
