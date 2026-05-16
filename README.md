@@ -22,7 +22,14 @@ pip install mysql-connector-python bcrypt
 
 ## Initier la base de données
 
-Lancer le parsing des données de départ :
+Créer (ou réinitialiser) la base de données :
+
+```bash
+mariadb -u enigma -p'Eni@2006' -e "DROP DATABASE IF EXISTS ProjetBdd; CREATE DATABASE ProjetBdd;"
+mariadb -u enigma -p'Eni@2006' ProjetBdd < ProjetBdd.sql
+```
+
+Peupler la base avec les données de départ :
 
 ```bash
 python Parsing.py
