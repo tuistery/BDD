@@ -58,7 +58,7 @@ def parse_utilisateurs():
         uname = user.find('nomUtilisateur').text
         email = user.find('email').text
         reg_date = user.find('dateInscription').text
-        points = int(user.find('points').text)
+        points = int(user.find('points').text or 0)
         titre = user.find('titreActif').text
         cursor.execute(
             "INSERT IGNORE INTO User (UID, UName, Pass, Email, RegistrationDate, Points, Xp, Title) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
