@@ -41,7 +41,7 @@ CREATE TABLE Levels (
 
 -- Table User
 CREATE TABLE User (
-    UID VARCHAR(50) PRIMARY KEY,
+    UID INT PRIMARY KEY,
     UName VARCHAR(255) NOT NULL,
     Pass VARCHAR(255) NOT NULL,
     Email VARCHAR(255) UNIQUE NOT NULL,
@@ -55,8 +55,8 @@ CREATE TABLE User (
 
 -- Table Summary
 CREATE TABLE Summary (
-    SID VARCHAR(50) PRIMARY KEY,
-    AuthorID VARCHAR(50) NOT NULL,
+    SID INT PRIMARY KEY,
+    AuthorID INT NOT NULL,
     Course VARCHAR(20) NOT NULL,
     PublicationDate DATE NOT NULL,
     Title VARCHAR(255) NOT NULL,
@@ -69,8 +69,8 @@ CREATE TABLE Summary (
 
 -- Table Contribution
 CREATE TABLE Contribution (
-    CID VARCHAR(50) PRIMARY KEY,
-    UID VARCHAR(50) NOT NULL,
+    CID INT PRIMARY KEY,
+    UID INT NOT NULL,
     Contribution TEXT NOT NULL,
     Date DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (UID) REFERENCES User(UID) ON DELETE CASCADE
@@ -78,18 +78,18 @@ CREATE TABLE Contribution (
 
 -- Table Transaction
 CREATE TABLE Transaction (
-    TID VARCHAR(50) PRIMARY KEY,
+    TID INT PRIMARY KEY,
     Description TEXT,
-    UID VARCHAR(50) NOT NULL,
+    UID INT NOT NULL,
     Amount DECIMAL(10, 2) NOT NULL,
     Date DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (UID) REFERENCES User(UID) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE Notes (
-    NID VARCHAR(50),
-    UID VARCHAR(50),
-    SID VARCHAR(50),
+    NID INT,
+    UID INT,
+    SID INT,
     Note INT,
     Comment VARCHAR(255),
     PRIMARY KEY (UID, SID),
@@ -99,7 +99,7 @@ CREATE TABLE Notes (
 
 -- Table Object
 CREATE TABLE Object (
-    OID VARCHAR(50) PRIMARY KEY,
+    OID INT PRIMARY KEY,
     Price DECIMAL(10, 2) NOT NULL,
     Name VARCHAR(255) NOT NULL,
     Description TEXT
@@ -107,29 +107,29 @@ CREATE TABLE Object (
 
 -- Table Title (Spécialisation de Object)
 CREATE TABLE Title (
-    OID VARCHAR(50) PRIMARY KEY,
+    OID INT PRIMARY KEY,
     Label VARCHAR(255) NOT NULL,
     FOREIGN KEY (OID) REFERENCES Object(OID) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Table Theme (Spécialisation de Object)
 CREATE TABLE Theme (
-    OID VARCHAR(50) PRIMARY KEY,
+    OID INT PRIMARY KEY,
     Colors VARCHAR(100),
     FOREIGN KEY (OID) REFERENCES Object(OID) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Table Badge (Spécialisation de Object)
 CREATE TABLE Badge (
-    OID VARCHAR(50) PRIMARY KEY,
+    OID INT PRIMARY KEY,
     Symbol VARCHAR(255),
     FOREIGN KEY (OID) REFERENCES Object(OID) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Table Inventory
 CREATE TABLE Inventory (
-    OID VARCHAR(50),
-    OwnerID VARCHAR(50),
+    OID INT,
+    OwnerID INT,
     Quantity INT DEFAULT 1,
     isActive BOOLEAN DEFAULT FALSE,
     PRIMARY KEY (OID, OwnerID),
@@ -152,8 +152,8 @@ CREATE TABLE Belong_to (
 
 -- Relation Is_apply_to (Summary - Contribution)
 CREATE TABLE Is_apply_to (
-    SID VARCHAR(50),
-    CID VARCHAR(50),
+    SID INT,
+    CID INT,
     PRIMARY KEY (SID, CID),
     FOREIGN KEY (SID) REFERENCES Summary(SID) ON DELETE CASCADE,
     FOREIGN KEY (CID) REFERENCES Contribution(CID) ON DELETE CASCADE
@@ -161,7 +161,7 @@ CREATE TABLE Is_apply_to (
 
 -- Relation Is_defined (Contribution - Action)
 CREATE TABLE Is_defined (
-    CID VARCHAR(50),
+    CID INT,
     ActionDescription VARCHAR(255),
     PRIMARY KEY (CID, ActionDescription),
     FOREIGN KEY (CID) REFERENCES Contribution(CID) ON DELETE CASCADE,
@@ -170,8 +170,8 @@ CREATE TABLE Is_defined (
 
 -- Relation Do (User - Contribution)
 CREATE TABLE Do (
-    UID VARCHAR(50),
-    CID VARCHAR(50),
+    UID INT,
+    CID INT,
     PRIMARY KEY (UID, CID),
     FOREIGN KEY (UID) REFERENCES User(UID) ON DELETE CASCADE,
     FOREIGN KEY (CID) REFERENCES Contribution(CID) ON DELETE CASCADE
@@ -179,8 +179,8 @@ CREATE TABLE Do (
 
 -- Relation Concern (Transaction - Contribution)
 CREATE TABLE Concern (
-    TID VARCHAR(50),
-    CID VARCHAR(50),
+    TID INT,
+    CID INT,
     PRIMARY KEY (TID, CID),
     FOREIGN KEY (TID) REFERENCES Transaction(TID) ON DELETE CASCADE,
     FOREIGN KEY (CID) REFERENCES Contribution(CID) ON DELETE CASCADE
@@ -189,9 +189,9 @@ CREATE TABLE Concern (
 -- Relation Buy (Transaction - Inventory) - CORRECTION ICI !
 -- La clé étrangère doit référencer TID vers Transaction.TID, pas Quantity
 CREATE TABLE Buy (
-    TID VARCHAR(50),
-    OID VARCHAR(50),
-    OwnerID VARCHAR(50),
+    TID INT,
+    OID INT,
+    OwnerID INT,
     Quantity INT NOT NULL,
     PRIMARY KEY (TID, OID, OwnerID),
     FOREIGN KEY (TID) REFERENCES Transaction(TID) ON DELETE CASCADE,

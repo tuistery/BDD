@@ -80,20 +80,18 @@ def print_structured_list(items, title="Resultats"):
         )
         print(line)
 
-def get_table_length(table):
+def get_next_id(table, id):
     cursor = connection.cursor()
-    query = f"SELECT COUNT(*) FROM {table}"
-    
+    query = f"SELECT COALESCE(MAX({id}), 0) + 1 FROM {table}"
     cursor.execute(query)
     result = cursor.fetchone()
     cursor.close()
-    
     return result[0]
 
 class DataUser:
     def __init__(self, username: str, password: str, email: str, date_="2026-04-03", points=0, Xp=0, title="Null", id=-1):
         if id == -1:
-            self.userId = get_table_length("User")
+            self.userId = get_next_id("User", "UID")
         else:
             self.userId = id
             
@@ -168,7 +166,7 @@ def ajoutTransaction(typeAction:str,userid:int):
     if connection.is_connected():
         cursor = connection.cursor(dictionary=True)
         query = "INSERT INTO Transaction (TID,Description,UID,Amount,Date) VALUES (%s,%s,%s,%s,%s)"
-        val = (get_table_length("Transaction"),typeAction,userid,getAmount(typeAction),date.today())
+        val = (get_next_id("Transaction", "TID"),typeAction,userid,getAmount(typeAction),date.today())
     try:
         cursor.execute(query, val)
         connection.commit()
@@ -273,8 +271,8 @@ def getCourseByMnemonic(mnemonic: str):
 def ajoutCours(newMnemonic: str,newName: str,faculty: str,newCredit:int):
     if connection.is_connected():
         cursor = connection.cursor(dictionary=True)
-        query = "INSERT INTO Course (Mnemonic,Name,Faculty) VALUES (%s, %s, %s)"
-        val = (newMnemonic,newName,faculty)
+        query = "INSERT INTO Course (Mnemonic,Name,Faculty,Credits) VALUES (%s, %s, %s, %s)"
+        val = (newMnemonic,newName,faculty,newCredit)
         try:
             cursor.execute(query, val)
             connection.commit()
@@ -288,7 +286,7 @@ def publierResumer(authorID: int, mnemonique:str,title:str,desc:str,visiblity = 
      if connection.is_connected():
         cursor = connection.cursor(dictionary=True)
         query = "INSERT INTO Summary (SID,AuthorID,Course,PublicationDate,Title,Description,Version,Visibility) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-        val = (get_table_length("Summary"),authorID,mnemonique,date.today(),title,desc,"1.0",visiblity)
+        val = (get_next_id("Summary", "SID"),authorID,mnemonique,date.today(),title,desc,"1.0",visiblity)
         try:
             cursor.execute(query, val)
             connection.commit()
@@ -325,8 +323,8 @@ def consulterResumé(mnemonic:str , userId = -1):
 def publierNote(UID:int,SID:int,Note:int,Comment:str):
     if connection.is_connected():
         cursor = connection.cursor(dictionary=True)
-        query = "INSERT INTO Note (NID,UID,SID,Note,Comment) VALUES (%s, %s, %s, %s, %s)"
-        val = (get_table_length("Note"),UID,SID,Note,Comment)
+        query = "INSERT INTO Notes (NID,UID,SID,Note,Comment) VALUES (%s, %s, %s, %s, %s)"
+        val = (get_next_id("Notes", "NID"),UID,SID,Note,Comment)
         try:
             cursor.execute(query, val)
             connection.commit()
@@ -777,8 +775,9 @@ def main():
             mnemonic = input("Quel cours voulez voir les résumés pour les noter ? : ").strip().upper()
             list_course = consulterResumé(mnemonic)
             print_structured_list(list_course, f"Resumes a noter ({mnemonic})")
-            sid = int(input("Quel résumé voulez vous noter ? : (entrer le SID)"))
-            if sid < 0 or sid > len(list_course):
+            sid = int(input("Quel résumé voulez vous noter ? : (entrer le SID) "))
+            print("TEST : ",sid)
+            if sid not in [int(item["SID"]) for item in list_course]:
                 print("SID invalide")
                 continue
             note = int(input("Note : "))
