@@ -7,6 +7,7 @@ COMMENTAIRES_PATH = "./data/commentaires.json"
 COURS_PATH = "./data/cours.csv"
 RECOMPENSES_PATH = "./data/recompenses.xml"
 UTILISATEURS_PATH = "./data/utilisateurs.xml"
+PDF_PATH = "./data/placeholder.pdf"
 
 connection = mysql.connector.connect(
     host='localhost',
@@ -53,6 +54,9 @@ def parse_recompenses():
 def parse_utilisateurs():
     cursor = connection.cursor()
     summary_counter = 0
+    with open(PDF_PATH, 'rb') as f :
+        fileContent = f.read()
+
     for user in ET.parse(UTILISATEURS_PATH).getroot().findall('utilisateur'):
         uid = user.get('id')
         uname = user.find('nomUtilisateur').text
@@ -66,9 +70,15 @@ def parse_utilisateurs():
         )
         for resume in user.findall('resumes/resume'):
             summary_counter += 1
+            fileName = f"{uid}_{summary_counter}.pdf"
             cursor.execute(
-                "INSERT IGNORE INTO Summary (SID, AuthorID, Course, PublicationDate, Title, Version, Visibility) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                (summary_counter, uid, resume.find('cours').text, resume.find('datePublication').text, resume.find('titre').text, '1.0', 'public')
+                "INSERT IGNORE INTO Files (Name, Size, Content) VALUES (%s, %s, %s)",
+                (fileName, len(fileContent), fileContent)
+            )
+            fileID = cursor.lastrowid
+            cursor.execute(
+                "INSERT IGNORE INTO Summary (SID, AuthorID, FileID, Course, PublicationDate, Title, Version, Visibility) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                (summary_counter, uid, fileID, resume.find('cours').text, resume.find('datePublication').text, resume.find('titre').text, '1.0', 'public')
             )
         for achat in user.findall('achats/objet'):
             cursor.execute(

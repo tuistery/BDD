@@ -67,7 +67,7 @@ CREATE TABLE Files (
 CREATE TABLE Summary (
     SID INT PRIMARY KEY,
     AuthorID INT NOT NULL,
-    FileID INT NULL,
+    FileID INT NOT NULL,
     Course VARCHAR(20) NOT NULL,
     PublicationDate DATE NOT NULL,
     Title VARCHAR(255) NOT NULL,
@@ -76,7 +76,7 @@ CREATE TABLE Summary (
     Visibility ENUM('public', 'private', 'restricted') DEFAULT 'private',
     FOREIGN KEY (AuthorID) REFERENCES User(UID) ON DELETE CASCADE,
     FOREIGN KEY (Course) REFERENCES Course(Mnemonic) ON DELETE CASCADE,
-    FOREIGN KEY (FileID) REFERENCES Files(FID) ON DELETE SET NULL
+    FOREIGN KEY (FileID) REFERENCES Files(FID) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Table Contribution
