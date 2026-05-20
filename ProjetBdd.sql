@@ -53,10 +53,21 @@ CREATE TABLE User (
     FOREIGN KEY (RankLevel) REFERENCES Levels(RankLevel) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
+-- Table File
+CREATE TABLE Files (
+    FID INT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(255) NOT NULL UNIQUE,
+    Type_mime VARCHAR(100) NOT NULL DEFAULT 'application/pdf',
+    Size INT NOT NULL,
+    Content LONGBLOB NOT NULL,
+    UploadDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 -- Table Summary
 CREATE TABLE Summary (
     SID INT PRIMARY KEY,
     AuthorID INT NOT NULL,
+    FileID INT NULL,
     Course VARCHAR(20) NOT NULL,
     PublicationDate DATE NOT NULL,
     Title VARCHAR(255) NOT NULL,
@@ -64,7 +75,8 @@ CREATE TABLE Summary (
     Version VARCHAR(20) DEFAULT '1.0',
     Visibility ENUM('public', 'private', 'restricted') DEFAULT 'private',
     FOREIGN KEY (AuthorID) REFERENCES User(UID) ON DELETE CASCADE,
-    FOREIGN KEY (Course) REFERENCES Course(Mnemonic) ON DELETE CASCADE
+    FOREIGN KEY (Course) REFERENCES Course(Mnemonic) ON DELETE CASCADE,
+    FOREIGN KEY (FileID) REFERENCES Files(FID) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- Table Contribution
@@ -220,6 +232,20 @@ INSERT INTO Action (Description, XpGain, CoinGain) VALUES
 ('Achat d’un titre cosmétique', 5, 0),
 ('Résumé mis en favori par un tiers', 15, 10),
 ('Première connexion de la journée', 5, 2);
+
+-- En cas de suppression d'un résumé, le fichier associé est aussi supprimé
+DELIMITER //
+
+CREATE TRIGGER delete_file_on_summary_delete
+BEFORE DELETE ON Summary
+FOR EACH ROW
+BEGIN
+    IF OLD.FileID IS NOT NULL THEN
+        DELETE FROM Files WHERE FID = OLD.FileID;
+    END IF;
+END //
+
+DELIMITER ;
 
 SELECT 'Base de données créée avec succès!' AS Message;
 SHOW TABLES;

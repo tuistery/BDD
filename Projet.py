@@ -1,5 +1,5 @@
 import mysql.connector
-from datetime import date
+from datetime import date, datetime
 import bcrypt
 
 # Connexion globale
@@ -29,6 +29,7 @@ CMD_ACTIVATE_BADGE = "activer_badge"
 # TODO
 CMD_LEADERBOARD = "classement"
 
+CMD_DOWNLOAD_SUMMARY = "telecharger_resume"
 CMD_EDIT_SUMMARY = "modifier_resume"
 CMD_DELETE_SUMMARY = "supprimer_resume"
 CMD_HISTORY = "historique"
@@ -282,12 +283,26 @@ def ajoutCours(newMnemonic: str,newName: str,faculty: str,newCredit:int):
         finally:
             cursor.close()
 
-def publierResumer(authorID: int, mnemonique:str,title:str,desc:str,visiblity = "private"):
+def publierResumer(authorID: int, mnemonique:str,title:str,desc:str, filePath:str, visibility = "private"):
      if connection.is_connected():
         cursor = connection.cursor(dictionary=True)
-        query = "INSERT INTO Summary (SID,AuthorID,Course,PublicationDate,Title,Description,Version,Visibility) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-        val = (get_next_id("Summary", "SID"),authorID,mnemonique,date.today(),title,desc,"1.0",visiblity)
+
+        try :
+            with open(filePath, 'rb') as f:
+                    fileContent = f.read()
+        except Exception as e :
+            print(f"Impossible de lire le fichier : {e}")
+            return
+
+        fileQuery = "INSERT INTO Files (Name, Size, Content) VALUES (%s, %s, %s)"
+        fileName = f"{authorID}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        fileVal = (fileName, len(fileContent), fileContent)
+
+        query = "INSERT INTO Summary (SID,AuthorID,FileID,Course,PublicationDate,Title,Description,Version,Visibility) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
         try:
+            cursor.execute(fileQuery, fileVal)
+            fileID = cursor.lastrowid
+            val = (get_next_id("Summary", "SID"),authorID,fileID,mnemonique,date.today(),title,desc,"1.0",visibility)
             cursor.execute(query, val)
             connection.commit()
             print(f"Résumé avec le titre : {title} a été enregistré pour le cours {mnemonique} avec succès !")
@@ -684,6 +699,42 @@ def supprimerResumer(SID:int,UID:int):
         finally:
             cursor.close()
 
+def telechargerResume(SID:int, UID:int, downloadPath:str) :
+    if connection.is_connected() :
+        cursor = connection.cursor(dictionary=True)
+        query = """
+        SELECT f.Name, f.Content 
+        FROM Files f, Summary s
+        WHERE s.FileID=f.FID AND s.SID=%s AND (s.AuthorID=%s OR s.Visibility='public' OR s.Visibility='restricted')
+        """
+        val = (SID, UID)
+        try :
+            cursor.execute(query, val)
+            file = cursor.fetchone()
+            if file is None :
+                print("Vous n'avez pas accès à ce fichier ou le fichier est inexistant")
+                return
+            if downloadPath == "" :
+                downloadPath = file['Name']
+            elif not os.path.isdir(downloadPath) :
+                print(f"Dossier inexistant : {downloadPath}")
+                return
+            else :
+                downloadPath = os.path.join(downloadPath, file['Name'])
+            try :
+                with open(downloadPath, 'wb') as f :
+                    f.write(file['Content'])
+            except Exception as e :
+                print(f"Impossible d'écrire dans ce dossier : {e}")
+                return
+            
+            print(f"Fichier enregistré sur {downloadPath}")
+        
+        except mysql.connector.Error as err :
+            print(f"Erreur : {err}")
+        finally :
+            cursor.close()
+ 
 def afficherCommandes(connected: int):
     print("\n" + "=" * 64)
     print("                    MENU DES COMMANDES")
@@ -707,6 +758,7 @@ def afficherCommandes(connected: int):
         print("   - note           : noter un resume")
         print("   - modifier_resume: modifier un de vos resumes")
         print("   - supprimer_resume: supprimer un de vos resumes")
+        print("   - telecharger_resume: télécharger un résumé sur le disque")
         print("")
         print("  Boutique")
         print("   - boutique       : voir et acheter des objets")
@@ -763,7 +815,8 @@ def main():
             newVisibility = input("Visibility (default = private) :")
             if (newVisibility == ""):
                 newVisibility = "private"
-            publierResumer(CurrentUser.getId(),newMnemonic,newTitle,newDesc,newVisibility)
+            filePath = input("Entrez le chemin du fichier :")
+            publierResumer(CurrentUser.getId(),newMnemonic,newTitle,newDesc, filePath, newVisibility)
             CurrentUser.reload_user()
         elif request == CMD_CONSULTER and connected == 1:
             mnemonic = input("Quel cours voulez voir les résumés ? : ").strip().upper()
@@ -820,6 +873,10 @@ def main():
             print_structured_list(consulterHistorique(CurrentUser.getId()), "Historique")
         elif request == CMD_LEADERBOARD and connected == 1:
             print_structured_list(consulterClassement(), "Classement")
+        elif request == CMD_DOWNLOAD_SUMMARY and connected == 1:
+            sid = int(input("Quel résumé voulez-vous lire ? (entrer le SID) : "))
+            downloadPath = input("Entrez le chemin de destination (par défaut : dossier courant) : ")
+            telechargerResume(sid, CurrentUser.getId(), downloadPath)
         elif request == CMD_EDIT_SUMMARY and connected == 1:
             my_summaries = consulterMesResumes(CurrentUser.getId())
             print_structured_list(my_summaries, "Mes resumes")
