@@ -34,6 +34,8 @@ CMD_DOWNLOAD_SUMMARY = "telecharger_resume"
 CMD_EDIT_SUMMARY = "modifier_resume"
 CMD_DELETE_SUMMARY = "supprimer_resume"
 CMD_HISTORY = "historique"
+CMD_INNACTIF = "inactifs"
+CMD_MEILLEURS = "meilleurs"
 
 # Libellés d'actions (doivent correspondre exactement à la table Action)
 ACTION_PUBLICATION_RESUME = "Publication d’un résumé"
@@ -774,6 +776,7 @@ def afficherCommandes(connected: int):
         print("   - historique     : voir vos transactions")
         print("   - classement     : voir le leaderboard (top 10)")
         print("   - actifs         : utilisateurs avec resumes dans >= 3 matieres")
+        print("   - inactifs       : utilisateurs n'ayant jamais publie de resume")
         print("")
         print("  Cours & Resumes")
         print("   - list           : lister les cours")
@@ -785,6 +788,7 @@ def afficherCommandes(connected: int):
         print("   - modifier_resume: modifier un de vos resumes")
         print("   - supprimer_resume: supprimer un de vos resumes")
         print("   - telecharger_resume: télécharger un résumé sur le disque")
+        print("   - meilleurs      : les resumes les mieux notes par cours")
         print("")
         print("  Boutique")
         print("   - boutique       : voir et acheter des objets")
@@ -793,6 +797,37 @@ def afficherCommandes(connected: int):
         print("   - activer_badge  : activer un badge possede")
         print("   - exit           : quitter l'application")
     print("=" * 64)
+
+def noteMaxDeChaqueResumé():
+    if not connection.is_connected():
+        return []
+
+    cursor = connection.cursor(dictionary=True)
+    query = "SELECT c.Mnemonic, c.Name AS CourseName, s.SID, s.Title AS SummaryTitle, avg_notes.AverageNote FROM Course c JOIN Summary s ON c.Mnemonic = s.Course JOIN (SELECT SID, AVG(Note) AS AverageNote FROM Notes GROUP BY SID) AS avg_notes ON s.SID = avg_notes.SID JOIN (SELECT s2.Course, MAX(avg_note) AS max_avg FROM (SELECT s2.SID, s2.Course, AVG(n2.Note) AS avg_note FROM Summary s2 JOIN Notes n2 ON s2.SID = n2.SID GROUP BY s2.SID, s2.Course) AS s2 GROUP BY s2.Course) AS course_max ON s.Course = course_max.Course AND avg_notes.AverageNote = course_max.max_avg ORDER BY c.Mnemonic;"
+    try:
+        cursor.execute(query)
+        return cursor.fetchall()
+    except mysql.connector.Error as err:
+        print(f"Erreur de select : {err}")
+        return []
+    finally:
+        cursor.close()
+
+def utilisateurQuiNontJamaisPublier():
+    if not connection.is_connected():
+        return []
+
+    cursor = connection.cursor(dictionary=True)
+    query = "SELECT u.UID, u.UName, u.Email, u.RegistrationDate FROM User u WHERE NOT EXISTS ( SELECT 1 FROM Summary s WHERE s.AuthorID = u.UID) ORDER BY u.UName;"
+    try:
+        cursor.execute(query)
+        return cursor.fetchall()
+    except mysql.connector.Error as err:
+        print(f"Erreur de select : {err}")
+        return []
+    finally:
+        cursor.close()
+
 
 def main():
     isActive = True
@@ -929,6 +964,12 @@ def main():
                 print("SID invalide")
                 continue
             supprimerResumer(sid,CurrentUser.getId())
+        elif request == CMD_INNACTIF and connected == 1:
+            my_summaries = utilisateurQuiNontJamaisPublier()
+            print_structured_list(my_summaries, "User qui n'ont pas publié")
+        elif request == CMD_MEILLEURS and connected == 1:
+            my_summaries = noteMaxDeChaqueResumé()
+            print_structured_list(my_summaries, "Meilleurs resumés par cours")
         elif request == CMD_EXIT:
             isActive = False
             connection.close()
