@@ -1,9 +1,89 @@
-python3 -m venv venv
+#!/bin/bash
+
+# ==============================================================================
+# CONFIGURATION & ROBUSTESSE
+# ==============================================================================
+# -e : Arrête le script immédiatement si une commande échoue
+# -u : Provoque une erreur si une variable non définie est utilisée
+# -o pipefail : Protège les erreurs masquées dans les pipelines
+set -euo pipefail
+
+# Fonction de nettoyage et de gestion des erreurs
+declencher_erreur() {
+    local ligne_erreur=$1
+    local code_erreur=$2
+    echo -e "\n[ERREUR] Le script a échoué à la ligne $ligne_erreur avec le code de retour $code_erreur."
+    exit "$code_erreur"
+}
+
+# Associer le signal ERR à notre fonction
+trap 'declencher_erreur $LINENO $?' ERR
+
+# ==============================================================================
+# 1. ENVIRONNEMENT VIRTUEL PYTHON
+# ==============================================================================
+echo "Configuration de l'environnement Python..."
+
+# Créer le venv s'il n'existe pas déjà
+if [ ! -d "venv" ]; then
+    python3 -m venv venv
+fi
+
+# Activer l'environnement virtuel
 source venv/bin/activate
 
-mariadb -u enigma -p'Eni@2006' -e "DROP DATABASE IF EXISTS ProjetBdd; CREATE DATABASE ProjetBdd;"
-mariadb -u enigma -p'Eni@2006' ProjetBdd < ProjetBdd.sql
+# Mettre à jour pip et installer les dépendances proprement
+pip install --upgrade pip --quiet
+pip install mysql-connector-python bcrypt --quiet
 
-python3 Parsing.py
+# ==============================================================================
+# 2. SAISIE DES IDENTIFIANTS (SÉCURISÉE)
+# ==============================================================================
+echo -e "\nConnexion à la base de données :"
 
-python Projet.py
+# Saisie du nom d'utilisateur (avec une valeur par défaut 'root' pour aller vite)
+read -p "  Nom d'utilisateur MariaDB [root] : " username
+username=${username:-root}
+
+# Saisie du mot de passe masquée (-s)
+read -s -p "  Mot de passe : " password
+echo "" # Saut de ligne requis après un read -s
+
+# ==============================================================================
+# 3. BASE DE DONNÉES MARIADB
+# ==============================================================================
+echo -e "\nImportation du fichier SQL..."
+
+if [ ! -f "ProjetBdd.sql" ]; then
+    echo "Erreur : Le fichier 'ProjetBdd.sql' est introuvable dans le dossier courant."
+    exit 1
+fi
+
+# Utilisation de MYSQL_PWD pour éviter de passer le mot de passe en clair dans les processus
+export MYSQL_PWD="$password"
+
+# Exécution de l'import (on ajoute -v pour un retour visuel si besoin, ou on laisse tel quel)
+mariadb -u "$username" < ProjetBdd.sql
+
+# Nettoyage de la variable d'environnement par sécurité
+unset MYSQL_PWD
+
+echo "Base de données initialisée avec succès."
+
+# ==============================================================================
+# 4. EXÉCUTION DES SCRIPTS PYTHON
+# ==============================================================================
+echo -e "\nExécution des scripts Python..."
+
+# On s'assure que les fichiers Python existent avant de les lancer
+if [ ! -f "Parsing.py" ] || [ ! -f "Projet.py" ]; then
+    echo "Erreur : 'Parsing.py' ou 'Projet.py' manquant."
+    exit 1
+fi
+
+echo "  Lancement de Parsing.py..."
+python3 Parsing.py "$username" "$password"
+
+echo "  Lancement de Projet.py..."
+# Correction ici : utilisation constante de 'python3' pour éviter les conflits hors du venv
+python3 Projet.py "$username" "$password"

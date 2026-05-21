@@ -1,13 +1,14 @@
 import mysql.connector
 from datetime import date, datetime
 import bcrypt
+import sys
 
 # Connexion globale
 connection = mysql.connector.connect(
     host='localhost',
     database='ProjetBdd',
-    user='enigma',
-    password='Eni@2006'
+    user=sys.argv[1],
+    password=sys.argv[2]
 )
 
 # Constantes pour le menu

@@ -2,6 +2,7 @@ import csv
 import json
 import xml.etree.ElementTree as ET
 import mysql.connector
+import sys
 
 COMMENTAIRES_PATH = "./data/commentaires.json"
 COURS_PATH = "./data/cours.csv"
@@ -12,8 +13,8 @@ PDF_PATH = "./data/placeholder.pdf"
 connection = mysql.connector.connect(
     host='localhost',
     database='ProjetBdd',
-    user='enigma',
-    password='Eni@2006'
+    user=sys.argv[1],
+    password=sys.argv[2]
 )
 
 
