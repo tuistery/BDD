@@ -28,6 +28,7 @@ CMD_ACTIVATE_TITLE = "activer_titre"
 CMD_ACTIVATE_BADGE = "activer_badge"
 # TODO
 CMD_LEADERBOARD = "classement"
+CMD_MULTI_MATIERES = "actifs"
 
 CMD_DOWNLOAD_SUMMARY = "telecharger_resume"
 CMD_EDIT_SUMMARY = "modifier_resume"
@@ -611,6 +612,7 @@ def consulterClassement():
         SELECT UName, Points, Xp, Title
         FROM User
         ORDER BY Points DESC, Xp DESC, UName ASC
+        LIMIT 10
     """
     try:
         cursor.execute(query)
@@ -618,6 +620,29 @@ def consulterClassement():
         for idx, row in enumerate(classement, start=1):
             row["Rang"] = idx
         return classement
+    except mysql.connector.Error as err:
+        print(f"Erreur de select : {err}")
+        return []
+    finally:
+        cursor.close()
+
+def consulterUsersMultiMatieres():
+    if not connection.is_connected():
+        return []
+
+    cursor = connection.cursor(dictionary=True)
+    query = """
+        SELECT UName
+        FROM User u
+        WHERE (
+            SELECT COUNT(DISTINCT Course)
+            FROM Summary
+            WHERE AuthorID = u.UID
+        ) >= 3
+    """
+    try:
+        cursor.execute(query)
+        return cursor.fetchall()
     except mysql.connector.Error as err:
         print(f"Erreur de select : {err}")
         return []
@@ -747,7 +772,8 @@ def afficherCommandes(connected: int):
         print("  Utilisateur")
         print("   - profil         : voir votre profil")
         print("   - historique     : voir vos transactions")
-        print("   - classement     : voir le leaderboard")
+        print("   - classement     : voir le leaderboard (top 10)")
+        print("   - actifs         : utilisateurs avec resumes dans >= 3 matieres")
         print("")
         print("  Cours & Resumes")
         print("   - list           : lister les cours")
@@ -872,7 +898,9 @@ def main():
         elif request == CMD_HISTORY and connected == 1:
             print_structured_list(consulterHistorique(CurrentUser.getId()), "Historique")
         elif request == CMD_LEADERBOARD and connected == 1:
-            print_structured_list(consulterClassement(), "Classement")
+            print_structured_list(consulterClassement(), "Classement Top 10")
+        elif request == CMD_MULTI_MATIERES and connected == 1:
+            print_structured_list(consulterUsersMultiMatieres(), "Utilisateurs actifs (>= 3 matieres)")
         elif request == CMD_DOWNLOAD_SUMMARY and connected == 1:
             sid = int(input("Quel résumé voulez-vous lire ? (entrer le SID) : "))
             downloadPath = input("Entrez le chemin de destination (par défaut : dossier courant) : ")
