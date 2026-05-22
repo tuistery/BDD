@@ -37,6 +37,8 @@ CMD_DELETE_SUMMARY = "supprimer_resume"
 CMD_HISTORY = "historique"
 CMD_INNACTIF = "inactifs"
 CMD_MEILLEURS = "meilleurs"
+CMD_TOP_COURS = "top_cours"
+CMD_MOYENNE_PAR_USER = "moyenne"
 
 # Libellés d'actions (doivent correspondre exactement à la table Action)
 ACTION_PUBLICATION_RESUME = "Publication d’un résumé"
@@ -790,6 +792,8 @@ def afficherCommandes(connected: int):
         print("   - supprimer_resume: supprimer un de vos resumes")
         print("   - telecharger_resume: télécharger un résumé sur le disque")
         print("   - meilleurs      : les resumes les mieux notes par cours")
+        print("   - top_cours      : le cours avec le plus de résumes")
+        print("   - moyenne        : nombre moyen de résumés par utilisateurs")
         print("")
         print("  Boutique")
         print("   - boutique       : voir et acheter des objets")
@@ -813,6 +817,37 @@ def noteMaxDeChaqueResumé():
         return []
     finally:
         cursor.close()
+
+def coursAvecPlusDeResumes():
+    if not connection.is_connected():
+        return []
+
+    cursor = connection.cursor(dictionary=True)
+    query = "SELECT Course, COUNT(*) as nb_resumes FROM Summary GROUP BY Course ORDER BY nb_resumes DESC LIMIT 1;"
+    try:
+        cursor.execute(query)
+        return cursor.fetchall()
+    except mysql.connector.Error as err:
+        print(f"Erreur de select : {err}")
+        return []
+    finally:
+        cursor.close()
+
+def moyenneResumeParUtilisateur():
+    if not connection.is_connected():
+        return []
+
+    cursor = connection.cursor(dictionary=True)
+    query = "SELECT AVG(nb_resumes) FROM (SELECT AuthorID, COUNT(*) as nb_resumes FROM Summary GROUP BY AuthorID) as resume_par_user;"
+    try:
+        cursor.execute(query)
+        return cursor.fetchall()
+    except mysql.connector.Error as err:
+        print(f"Erreur de select : {err}")
+        return []
+    finally:
+        cursor.close()
+
 
 def utilisateurQuiNontJamaisPublier():
     if not connection.is_connected():
@@ -971,6 +1006,12 @@ def main():
         elif request == CMD_MEILLEURS and connected == 1:
             my_summaries = noteMaxDeChaqueResumé()
             print_structured_list(my_summaries, "Meilleurs resumés par cours")
+        elif request == CMD_TOP_COURS and connected == 1:
+            my_summaries = coursAvecPlusDeResumes()
+            print_structured_list(my_summaries, "Cours avec le plus de résumés")
+        elif request == CMD_MOYENNE_PAR_USER and connected == 1:
+            my_summaries = moyenneResumeParUtilisateur()
+            print_structured_list(my_summaries, "Nombre moyen de résumés publiés par utilisateur")
         elif request == CMD_EXIT:
             isActive = False
             connection.close()
