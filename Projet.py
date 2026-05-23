@@ -2,6 +2,7 @@ import mysql.connector
 from datetime import date, datetime
 import bcrypt
 import sys
+import os
 
 # Connexion globale
 connection = mysql.connector.connect(
@@ -39,6 +40,7 @@ CMD_INNACTIF = "inactifs"
 CMD_MEILLEURS = "meilleurs"
 CMD_TOP_COURS = "top_cours"
 CMD_MOYENNE_PAR_USER = "moyenne"
+CMD_TOP_OBJET = "top_objet"
 
 # Libellés d'actions (doivent correspondre exactement à la table Action)
 ACTION_PUBLICATION_RESUME = "Publication d’un résumé"
@@ -790,7 +792,7 @@ def afficherCommandes(connected: int):
         print("   - note           : noter un resume")
         print("   - modifier_resume: modifier un de vos resumes")
         print("   - supprimer_resume: supprimer un de vos resumes")
-        print("   - telecharger_resume: télécharger un résumé sur le disque")
+        print("   - télécharger_resume: télécharger un résumé sur le disque")
         print("   - meilleurs      : les resumes les mieux notes par cours")
         print("   - top_cours      : le cours avec le plus de résumes")
         print("   - moyenne        : nombre moyen de résumés par utilisateurs")
@@ -798,8 +800,9 @@ def afficherCommandes(connected: int):
         print("  Boutique")
         print("   - boutique       : voir et acheter des objets")
         print("   - inventaire     : voir vos objets")
-        print("   - activer_titre  : activer un titre possede")
-        print("   - activer_badge  : activer un badge possede")
+        print("   - top_objet      : voir l'objet le plus acheté")
+        print("   - activer_titre  : activer un titre possède")
+        print("   - activer_badge  : activer un badge possède")
         print("   - exit           : quitter l'application")
     print("=" * 64)
 
@@ -823,7 +826,13 @@ def coursAvecPlusDeResumes():
         return []
 
     cursor = connection.cursor(dictionary=True)
-    query = "SELECT Course, COUNT(*) as nb_resumes FROM Summary GROUP BY Course ORDER BY nb_resumes DESC LIMIT 1;"
+    query = """
+        SELECT Course, COUNT(*) as nb_resumes
+        FROM Summary
+        GROUP BY Course
+        ORDER BY nb_resumes
+        DESC LIMIT 1
+    """
     try:
         cursor.execute(query)
         return cursor.fetchall()
@@ -838,7 +847,34 @@ def moyenneResumeParUtilisateur():
         return []
 
     cursor = connection.cursor(dictionary=True)
-    query = "SELECT AVG(nb_resumes) FROM (SELECT AuthorID, COUNT(*) as nb_resumes FROM Summary GROUP BY AuthorID) as resume_par_user;"
+    query = """
+        SELECT AVG(nb_resumes)
+        FROM (SELECT AuthorID, COUNT(*) as nb_resumes
+              FROM Summary
+              GROUP BY AuthorID) as resume_par_user
+    """
+    try:
+        cursor.execute(query)
+        return cursor.fetchall()
+    except mysql.connector.Error as err:
+        print(f"Erreur de select : {err}")
+        return []
+    finally:
+        cursor.close()
+
+def objetCosmetiqueLePlusAchete():
+    if not connection.is_connected():
+        return []
+
+    cursor = connection.cursor(dictionary=True)
+    query = """
+        SELECT o.OID, o.Name, SUM(i.Quantity) as nb_achats
+        FROM Inventory i
+        JOIN Object o ON o.OID = i.OID
+        GROUP BY i.OID, o.Name
+        ORDER BY nb_achats DESC
+        LIMIT 1
+    """
     try:
         cursor.execute(query)
         return cursor.fetchall()
@@ -1012,6 +1048,9 @@ def main():
         elif request == CMD_MOYENNE_PAR_USER and connected == 1:
             my_summaries = moyenneResumeParUtilisateur()
             print_structured_list(my_summaries, "Nombre moyen de résumés publiés par utilisateur")
+        elif request == CMD_TOP_OBJET and connected == 1:
+            my_summaries = objetCosmetiqueLePlusAchete()
+            print_structured_list(my_summaries, "Objet cosmétique le plus acheté")
         elif request == CMD_EXIT:
             isActive = False
             connection.close()
