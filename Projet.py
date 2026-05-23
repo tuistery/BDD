@@ -97,6 +97,47 @@ def get_next_id(table, id):
     cursor.close()
     return result[0]
 
+def executer_select(query: str, params: tuple=None) -> list[dict]:
+    if not connection.is_connected():
+        return []
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute(query, params)
+        return cursor.fetchall()
+    except mysql.connector.Error as err:
+        print(f"Erreur de select : {err}")
+        return []
+    finally:
+        cursor.close()
+
+def executer_select_une_ligne(query: str, params: tuple=None) -> dict | None:
+    if not connection.is_connected():
+        return None
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute(query, params)
+        return cursor.fetchone()
+    except mysql.connector.Error as err:
+        print(f"Erreur de select : {err}")
+        return None
+    finally:
+        cursor.close()
+
+def executer_write(query: str, params: tuple=None) -> int:
+    if not connection.is_connected():
+        return -1
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute(query, params)
+        connection.commit()
+        return cursor.rowcount
+    except mysql.connector.Error as err:
+        connection.rollback()
+        print(f"Erreur : {err}")
+        return -1
+    finally:
+        cursor.close()
+
 class DataUser:
     def __init__(self, username: str, password: str, email: str, date_="2026-04-03", points=0, Xp=0, title="Null", id=-1):
         if id == -1:
@@ -125,23 +166,13 @@ class DataUser:
         print(f"Title: {self.title}")
         print(f"XP: {self.Xp}")
     
-    def reload_user(self):
-        if connection.is_connected():
-            cursor = connection.cursor(dictionary=True)
-            try:
-                query = "SELECT Points, Xp, Title FROM User WHERE UID = %s"
-                cursor.execute(query, (self.getId(),))
-                result = cursor.fetchone()
-                
-                if result:
-                    self.points = result["Points"]
-                    self.Xp = result["Xp"]
-                    self.title = result["Title"]
-                
-            except mysql.connector.Error as err:
-                print(f"Erreur lors du reload : {err}")
-            finally:
-                cursor.close()
+    def reload_user(self) -> None:
+        query = "SELECT Points, Xp, Title FROM User WHERE UID = %s"
+        result = executer_select_une_ligne(query, (self.getId(),))
+        if result:
+            self.points = result["Points"]
+            self.Xp = result["Xp"]
+            self.title = result["Title"]
     
     # Méthode __str__ pour print() direct
     def __str__(self):
@@ -153,39 +184,20 @@ class DataUser:
         """Retourne une représentation détaillée de l'utilisateur"""
         return f"DataUser(id={self.userId}, username='{self.username}', points={self.points}, title='{self.title}', Xp={self.Xp})"
 
-def getAmount(desc:str):
-    if not connection.is_connected():
-        return 0
-
-    amount = 0
-    cursor = connection.cursor(dictionary=True)
+def getAmount(desc: str) -> int:
     query = "SELECT CoinGain FROM Action WHERE Description = %s"
-    try:
-        cursor.execute(query,(desc,))
-        resultat = cursor.fetchone()
-        if resultat and "CoinGain" in resultat:
-            amount = resultat["CoinGain"]
-    except mysql.connector.Error as err:
-        print(f"Erreur de insert : {err}")
-    finally:
-        cursor.close()
-        return amount
+    result = executer_select_une_ligne(query, (desc,))
+    if result:
+        return result["CoinGain"]
+    return 0
 
-def ajoutTransaction(typeAction:str,userid:int):
-    if connection.is_connected():
-        cursor = connection.cursor(dictionary=True)
-        query = "INSERT INTO Transaction (TID,Description,UID,Amount,Date) VALUES (%s,%s,%s,%s,%s)"
-        val = (get_next_id("Transaction", "TID"),typeAction,userid,getAmount(typeAction),date.today())
-    try:
-        cursor.execute(query, val)
-        connection.commit()
+def ajoutTransaction(typeAction: str, userid: int) -> None:
+    query = "INSERT INTO Transaction (TID,Description,UID,Amount,Date) VALUES (%s,%s,%s,%s,%s)"
+    params = (get_next_id("Transaction", "TID"), typeAction, userid, getAmount(typeAction), date.today())
+    if executer_write(query, params) != -1:
         print(f"Ajout de la transaction de l'utilisateur {userid} avec succès !")
-    except mysql.connector.Error as err:
-        print(f"Erreur de insert : {err}")
-    finally:
-        cursor.close()
 
-def ajoutPoints(typeAction:str,id:int):
+def ajoutPoints(typeAction: str, id: int) -> None:
     if connection.is_connected():
         cursor = connection.cursor(dictionary=True)
         query = """
@@ -195,15 +207,15 @@ def ajoutPoints(typeAction:str,id:int):
             WHERE UID = %s
         """
         val = (typeAction,typeAction,id)
-    try:
-        cursor.execute(query, val)
-        connection.commit()
-        print(f"Ajout des points et de l'xp a l'utilisateur {id} avec succès !")
-    except mysql.connector.Error as err:
-        print(f"Erreur de select : {err}")
-    finally:
-        cursor.close()
-        ajoutTransaction(typeAction,id)
+        try:
+            cursor.execute(query, val)
+            connection.commit()
+            print(f"Ajout des points et de l'xp a l'utilisateur {id} avec succès !")
+            ajoutTransaction(typeAction,id)
+        except mysql.connector.Error as err:
+            print(f"Erreur de select : {err}")
+        finally:
+            cursor.close()
     
 def register(userName: str, password: str, email: str) -> DataUser:
     password = password.encode('utf-8')
@@ -251,45 +263,19 @@ def login(userName: str, password: str) -> DataUser:
             print("Utilisateur introuvable ou mauvais mot de passe.")
             return None
 
-def getListCours():
-    if connection.is_connected():
-        cursor = connection.cursor(dictionary=True)
-        query = "SELECT * FROM Course"
-        cursor.execute(query)
-        resultat = cursor.fetchall()
-        cursor.close()
-        return resultat 
-    else:
-        return None
+def getListCours() -> list[dict]:
+    query = "SELECT * FROM Course"
+    return executer_select(query)
 
-def getCourseByMnemonic(mnemonic: str):
-    if not connection.is_connected():
-        return None
-
-    cursor = connection.cursor(dictionary=True)
+def getCourseByMnemonic(mnemonic: str) -> dict | None:
     query = "SELECT Mnemonic FROM Course WHERE Mnemonic = %s"
-    try:
-        cursor.execute(query, (mnemonic,))
-        return cursor.fetchone()
-    except mysql.connector.Error as err:
-        print(f"Erreur de select : {err}")
-        return None
-    finally:
-        cursor.close()
+    return executer_select_une_ligne(query, (mnemonic,))
 
-def ajoutCours(newMnemonic: str,newName: str,faculty: str,newCredit:int):
-    if connection.is_connected():
-        cursor = connection.cursor(dictionary=True)
-        query = "INSERT INTO Course (Mnemonic,Name,Faculty,Credits) VALUES (%s, %s, %s, %s)"
-        val = (newMnemonic,newName,faculty,newCredit)
-        try:
-            cursor.execute(query, val)
-            connection.commit()
-            print(f"Cours {newName} enregistré avec succès !")
-        except mysql.connector.Error as err:
-            print(f"Erreur d'insertion : {err}")
-        finally:
-            cursor.close()
+def ajoutCours(newMnemonic: str, newName: str, faculty: str, newCredit: int) -> None:
+    query = "INSERT INTO Course (Mnemonic,Name,Faculty,Credits) VALUES (%s, %s, %s, %s)"
+    params = (newMnemonic, newName, faculty, newCredit)
+    if executer_write(query, params) != -1:
+        print(f"Cours {newName} enregistré avec succès !")
 
 def publierResumer(authorID: int, mnemonique:str,title:str,desc:str, filePath:str, visibility = "private"):
      if connection.is_connected():
@@ -343,71 +329,27 @@ def consulterResumé(mnemonic:str , userId = -1):
         cursor.close()
     return resultat
 
-def publierNote(UID:int,SID:int,Note:int,Comment:str):
-    if connection.is_connected():
-        cursor = connection.cursor(dictionary=True)
-        query = "INSERT INTO Notes (NID,UID,SID,Note,Comment) VALUES (%s, %s, %s, %s, %s)"
-        val = (get_next_id("Notes", "NID"),UID,SID,Note,Comment)
-        try:
-            cursor.execute(query, val)
-            connection.commit()
-            print(f"Note {Note} publiée avec succès !")
-            ajoutPoints(ACTION_EVALUATION_RESUME, UID)
-        except mysql.connector.Error as err:
-            print(f"Erreur de insert : {err}")
-        finally:
-            cursor.close()
-        
-def consulterInventaire(UID:int):
-    resultat = []
-    if connection.is_connected():
-        cursor = connection.cursor(dictionary=True)
-        query = "SELECT * FROM Inventory WHERE OwnerID = %s"
-        val = (UID,)
-        try:
-            cursor.execute(query, val)
-            resultat = cursor.fetchall()
-            print(f"Inventaire de l'utilisateur {UID} avec succès !")
-        except mysql.connector.Error as err:
-            print(f"Erreur de select : {err}")
-        finally:
-            cursor.close()
-    return resultat
+def publierNote(UID: int, SID: int, Note: int, Comment: str) -> None:
+    query = "INSERT INTO Notes (NID,UID,SID,Note,Comment) VALUES (%s, %s, %s, %s, %s)"
+    params = (get_next_id("Notes", "NID"), UID, SID, Note, Comment)
+    if executer_write(query, params) != -1:
+        print(f"Note {Note} publiée avec succès !")
 
-def ajoutInventaire(UID:int,OID:int):
-    if connection.is_connected():
-        cursor = connection.cursor(dictionary=True)
-        query = "INSERT INTO Inventory (OID,OwnerID) VALUES (%s, %s)"
-        val = (OID,UID)
-        try:
-            cursor.execute(query, val)
-            connection.commit()
-            print(f"Objet {OID} ajouté à l'inventaire de l'utilisateur {UID} avec succès !")
-        except mysql.connector.Error as err:
-            print(f"Erreur de insert : {err}")
-        finally:
-            cursor.close()
+def consulterInventaire(UID: int) -> list[dict]:
+    query = "SELECT * FROM Inventory WHERE OwnerID = %s"
+    return executer_select(query, (UID,))
 
-def consulterBoutique():
-    resultat = []
-    if connection.is_connected():
-        cursor = connection.cursor(dictionary=True)
-        query = "SELECT * FROM Object"
-        try:
-            cursor.execute(query)
-            resultat = cursor.fetchall()
-            print(f"Boutique avec succès !")
-        except mysql.connector.Error as err:
-            print(f"Erreur de select : {err}")
-        finally:
-            cursor.close()
-    return resultat
+def ajoutInventaire(UID: int, OID: int) ->None:
+    query = "INSERT INTO Inventory (OID,OwnerID) VALUES (%s, %s)"
+    params = (OID, UID)
+    if executer_write(query, params) != -1:
+        print(f"Objet {OID} ajouté à l'inventaire de l'utilisateur {UID} avec succès !")
 
-def consulterTitresPossedes(UID:int):
-    if not connection.is_connected():
-        return []
+def consulterBoutique() -> list[dict]:
+    query = "SELECT * FROM Object"
+    return executer_select(query)
 
-    cursor = connection.cursor(dictionary=True)
+def consulterTitresPossedes(UID: int) -> list[dict]:
     query = """
         SELECT i.OID, t.Label, i.isActive
         FROM Inventory i
@@ -415,20 +357,9 @@ def consulterTitresPossedes(UID:int):
         WHERE i.OwnerID = %s
         ORDER BY i.OID
     """
-    try:
-        cursor.execute(query, (UID,))
-        return cursor.fetchall()
-    except mysql.connector.Error as err:
-        print(f"Erreur de select : {err}")
-        return []
-    finally:
-        cursor.close()
+    return executer_select(query, (UID,))
 
-def consulterBadgesPossedes(UID:int):
-    if not connection.is_connected():
-        return []
-
-    cursor = connection.cursor(dictionary=True)
+def consulterBadgesPossedes(UID: int) ->list[dict]:
     query = """
         SELECT i.OID, b.Symbol, o.Name, i.isActive
         FROM Inventory i
@@ -437,20 +368,9 @@ def consulterBadgesPossedes(UID:int):
         WHERE i.OwnerID = %s
         ORDER BY i.OID
     """
-    try:
-        cursor.execute(query, (UID,))
-        return cursor.fetchall()
-    except mysql.connector.Error as err:
-        print(f"Erreur de select : {err}")
-        return []
-    finally:
-        cursor.close()
+    return executer_select(query, (UID,))
 
-def consulterBadgeActif(UID:int):
-    if not connection.is_connected():
-        return None
-
-    cursor = connection.cursor(dictionary=True)
+def consulterBadgeActif(UID: int) -> dict | None:
     query = """
         SELECT b.Symbol, o.Name
         FROM Inventory i
@@ -459,14 +379,7 @@ def consulterBadgeActif(UID:int):
         WHERE i.OwnerID = %s AND i.isActive = TRUE
         LIMIT 1
     """
-    try:
-        cursor.execute(query, (UID,))
-        return cursor.fetchone()
-    except mysql.connector.Error as err:
-        print(f"Erreur de select : {err}")
-        return None
-    finally:
-        cursor.close()
+    return executer_select_une_ligne(query, (UID,))
 
 def acheterObjet(UID:int,OID:int):
     if not connection.is_connected():
@@ -610,34 +523,20 @@ def activerBadge(UID:int,OID:int):
     finally:
         cursor.close()
 
-def consulterClassement():
-    if not connection.is_connected():
-        return []
-
-    cursor = connection.cursor(dictionary=True)
+def consulterClassement() -> list[dict]:
     query = """
         SELECT UName, Points, Xp, Title
         FROM User
         ORDER BY Points DESC, Xp DESC, UName ASC
         LIMIT 10
     """
-    try:
-        cursor.execute(query)
-        classement = cursor.fetchall()
-        for idx, row in enumerate(classement, start=1):
+    leaderboard = executer_select(query)
+    if leaderboard:
+        for idx, row in enumerate(leaderboard, start=1):
             row["Rang"] = idx
-        return classement
-    except mysql.connector.Error as err:
-        print(f"Erreur de select : {err}")
-        return []
-    finally:
-        cursor.close()
+    return leaderboard
 
-def consulterUsersMultiMatieres():
-    if not connection.is_connected():
-        return []
-
-    cursor = connection.cursor(dictionary=True)
+def consulterUsersMultiMatieres() -> list[dict]:
     query = """
         SELECT UName
         FROM User u
@@ -647,89 +546,48 @@ def consulterUsersMultiMatieres():
             WHERE AuthorID = u.UID
         ) >= 3
     """
-    try:
-        cursor.execute(query)
-        return cursor.fetchall()
-    except mysql.connector.Error as err:
-        print(f"Erreur de select : {err}")
-        return []
-    finally:
-        cursor.close()
+    return executer_select(query)
 
-def consulterHistorique(UID:int):
-    if not connection.is_connected():
-        return []
-
-    cursor = connection.cursor(dictionary=True)
+def consulterHistorique(UID: int) -> list[dict]:
     query = """
         SELECT TID, Description, Amount, Date
         FROM Transaction
         WHERE UID = %s
         ORDER BY Date DESC
     """
-    try:
-        cursor.execute(query, (UID,))
-        return cursor.fetchall()
-    except mysql.connector.Error as err:
-        print(f"Erreur de select : {err}")
-        return []
-    finally:
-        cursor.close()
+    return executer_select(query, (UID,))
 
-def modifierResumer(SID:int,UID:int,newTitle:str,newDesc:str):
-    if not connection.is_connected():
-        return False
-
-    cursor = connection.cursor(dictionary=True)
+def modifierResumer(SID: int, UID: int, newTitle: str, newDesc: str) -> bool:
     query = """
         UPDATE Summary
         SET Title = %s, Description = %s
         WHERE SID = %s AND AuthorID = %s
     """
-    try:
-        cursor.execute(query, (newTitle, newDesc, SID, UID))
-        if cursor.rowcount == 0:
-            print("Résumé introuvable ou vous n'êtes pas l'auteur.")
-            connection.rollback()
-            return False
-        connection.commit()
+    params = (newTitle, newDesc, SID, UID)
+    rowcount = executer_write(query, params)
+    if rowcount == -1:
+        return False
+    elif rowcount == 0:
+        print("Résumé introuvable ou vous n'êtes pas l'auteur.")
+        return False
+    else:
         print(f"Résumé {SID} modifié avec succès !")
         return True
-    except mysql.connector.Error as err:
-        connection.rollback()
-        print(f"Erreur de update : {err}")
-        return False
-    finally:
-        cursor.close()
 
-def consulterMesResumes(UID:int):
-    if not connection.is_connected():
-        return []
+def consulterMesResumes(UID: int) -> list[dict]:
+    query = """
+        SELECT * 
+        FROM Summary 
+        WHERE AuthorID = %s 
+        ORDER BY PublicationDate DESC
+    """
+    return executer_select(query, (UID,))
 
-    cursor = connection.cursor(dictionary=True)
-    query = "SELECT * FROM Summary WHERE AuthorID = %s ORDER BY PublicationDate DESC"
-    try:
-        cursor.execute(query, (UID,))
-        return cursor.fetchall()
-    except mysql.connector.Error as err:
-        print(f"Erreur de select : {err}")
-        return []
-    finally:
-        cursor.close()
-
-def supprimerResumer(SID:int,UID:int):
-    if connection.is_connected():
-        cursor = connection.cursor(dictionary=True)
-        query = "DELETE FROM Summary WHERE SID = %s AND AuthorID = %s"
-        val = (SID,UID)
-        try:
-            cursor.execute(query, val)
-            connection.commit()
-            print(f"Résumé {SID} supprimé avec succès !")
-        except mysql.connector.Error as err:
-            print(f"Erreur de delete : {err}")
-        finally:
-            cursor.close()
+def supprimerResumer(SID: int, UID: int) -> None:
+    query = "DELETE FROM Summary WHERE SID = %s AND AuthorID = %s"
+    params = (SID,UID)
+    if executer_write(query, params) != -1:
+        print(f"Résumé {SID} supprimé avec succès !")
 
 def telechargerResume(SID:int, UID:int, downloadPath:str) :
     if connection.is_connected() :
@@ -806,99 +664,66 @@ def afficherCommandes(connected: int):
         print("   - exit           : quitter l'application")
     print("=" * 64)
 
-def noteMaxDeChaqueResumé():
-    if not connection.is_connected():
-        return []
+def noteMaxDeChaqueResumé() -> list[dict]:
+    query = """
+        SELECT c.Mnemonic, c.Name AS CourseName,
+            s.SID, s.Title AS SummaryTitle,
+            avg_notes.AverageNote
+        FROM Course c
+        JOIN Summary s ON c.Mnemonic = s.Course
+        JOIN (SELECT SID, AVG(Note) AS AverageNote
+              FROM Notes
+              GROUP BY SID) AS avg_notes ON s.SID = avg_notes.SID
+        JOIN (SELECT s2.Course, MAX(avg_note) AS max_avg
+              FROM (SELECT s2.SID, s2.Course, AVG(n2.Note) AS avg_note
+                    FROM Summary s2
+                    JOIN Notes n2 ON s2.SID = n2.SID
+                    GROUP BY s2.SID, s2.Course) AS s2 
+              GROUP BY s2.Course) AS course_max ON s.Course = course_max.Course
+                AND avg_notes.AverageNote = course_max.max_avg 
+        ORDER BY c.Mnemonic
+    """
+    return executer_select(query)
 
-    cursor = connection.cursor(dictionary=True)
-    query = "SELECT c.Mnemonic, c.Name AS CourseName, s.SID, s.Title AS SummaryTitle, avg_notes.AverageNote FROM Course c JOIN Summary s ON c.Mnemonic = s.Course JOIN (SELECT SID, AVG(Note) AS AverageNote FROM Notes GROUP BY SID) AS avg_notes ON s.SID = avg_notes.SID JOIN (SELECT s2.Course, MAX(avg_note) AS max_avg FROM (SELECT s2.SID, s2.Course, AVG(n2.Note) AS avg_note FROM Summary s2 JOIN Notes n2 ON s2.SID = n2.SID GROUP BY s2.SID, s2.Course) AS s2 GROUP BY s2.Course) AS course_max ON s.Course = course_max.Course AND avg_notes.AverageNote = course_max.max_avg ORDER BY c.Mnemonic;"
-    try:
-        cursor.execute(query)
-        return cursor.fetchall()
-    except mysql.connector.Error as err:
-        print(f"Erreur de select : {err}")
-        return []
-    finally:
-        cursor.close()
-
-def coursAvecPlusDeResumes():
-    if not connection.is_connected():
-        return []
-
-    cursor = connection.cursor(dictionary=True)
+def coursAvecPlusDeResumes() ->list[dict]:
     query = """
         SELECT Course, COUNT(*) as nb_resumes
         FROM Summary
         GROUP BY Course
-        ORDER BY nb_resumes
-        DESC LIMIT 1
+        ORDER BY nb_resumes DESC LIMIT 1
     """
-    try:
-        cursor.execute(query)
-        return cursor.fetchall()
-    except mysql.connector.Error as err:
-        print(f"Erreur de select : {err}")
-        return []
-    finally:
-        cursor.close()
+    return executer_select(query)
 
-def moyenneResumeParUtilisateur():
-    if not connection.is_connected():
-        return []
-
-    cursor = connection.cursor(dictionary=True)
+def moyenneResumeParUtilisateur() -> list[dict]:
     query = """
         SELECT AVG(nb_resumes)
         FROM (SELECT AuthorID, COUNT(*) as nb_resumes
               FROM Summary
               GROUP BY AuthorID) as resume_par_user
     """
-    try:
-        cursor.execute(query)
-        return cursor.fetchall()
-    except mysql.connector.Error as err:
-        print(f"Erreur de select : {err}")
-        return []
-    finally:
-        cursor.close()
+    return executer_select(query)
 
-def objetCosmetiqueLePlusAchete():
-    if not connection.is_connected():
-        return []
-
-    cursor = connection.cursor(dictionary=True)
+def objetCosmetiqueLePlusAchete() -> dict | None:
     query = """
         SELECT o.OID, o.Name, SUM(i.Quantity) as nb_achats
         FROM Inventory i
         JOIN Object o ON o.OID = i.OID
         GROUP BY i.OID, o.Name
-        ORDER BY nb_achats DESC
-        LIMIT 1
+        ORDER BY nb_achats DESC LIMIT 1
     """
-    try:
-        cursor.execute(query)
-        return cursor.fetchall()
-    except mysql.connector.Error as err:
-        print(f"Erreur de select : {err}")
-        return []
-    finally:
-        cursor.close()
+    return executer_select_une_ligne(query)
 
 
-def utilisateurQuiNontJamaisPublier():
-    if not connection.is_connected():
-        return []
-
-    cursor = connection.cursor(dictionary=True)
-    query = "SELECT u.UID, u.UName, u.Email, u.RegistrationDate FROM User u WHERE NOT EXISTS ( SELECT 1 FROM Summary s WHERE s.AuthorID = u.UID) ORDER BY u.UName;"
-    try:
-        cursor.execute(query)
-        return cursor.fetchall()
-    except mysql.connector.Error as err:
-        print(f"Erreur de select : {err}")
-        return []
-    finally:
-        cursor.close()
+def utilisateurQuiNontJamaisPublier() -> list[dict]:
+    query = """
+        SELECT u.UID, u.UName, u.Email, u.RegistrationDate
+        FROM User u 
+        WHERE NOT EXISTS (SELECT 1
+                          FROM Summary s
+                          WHERE s.AuthorID = u.UID)
+        ORDER BY u.UName
+    """
+    return executer_select(query)
 
 
 def main():
