@@ -41,6 +41,7 @@ CMD_MEILLEURS = "meilleurs"
 CMD_TOP_COURS = "top_cours"
 CMD_MOYENNE_PAR_USER = "moyenne"
 CMD_TOP_OBJET = "top_objet"
+CMD_PLUS_DEPENSE = "plus_depense"
 
 # Libellés d'actions (doivent correspondre exactement à la table Action)
 ACTION_PUBLICATION_RESUME = "Publication d’un résumé"
@@ -191,13 +192,14 @@ def getAmount(desc: str) -> int:
         return result["CoinGain"]
     return 0
 
-def ajoutTransaction(typeAction: str, userid: int) -> None:
+def ajoutTransaction(typeAction: str, userid: int, montantVariable: int = None) -> None:
     query = "INSERT INTO Transaction (TID,Description,UID,Amount,Date) VALUES (%s,%s,%s,%s,%s)"
-    params = (get_next_id("Transaction", "TID"), typeAction, userid, getAmount(typeAction), date.today())
+    montant = montantVariable if montantVariable is not None else getAmount(typeAction)
+    params = (get_next_id("Transaction", "TID"), typeAction, userid, montant, date.today())
     if executer_write(query, params) != -1:
         print(f"Ajout de la transaction de l'utilisateur {userid} avec succès !")
 
-def ajoutPoints(typeAction: str, id: int) -> None:
+def ajoutPoints(typeAction: str, id: int, montantVariable: int = None) -> None:
     if connection.is_connected():
         cursor = connection.cursor(dictionary=True)
         query = """
@@ -211,7 +213,7 @@ def ajoutPoints(typeAction: str, id: int) -> None:
             cursor.execute(query, val)
             connection.commit()
             print(f"Ajout des points et de l'xp a l'utilisateur {id} avec succès !")
-            ajoutTransaction(typeAction,id)
+            ajoutTransaction(typeAction,id, montantVariable)
         except mysql.connector.Error as err:
             print(f"Erreur de select : {err}")
         finally:
@@ -423,7 +425,7 @@ def acheterObjet(UID:int,OID:int):
         print(f"Objet '{objet['Name']}' acheté pour {prix} points.")
 
         # Récompense XP/coins définie dans la table Action.
-        ajoutPoints(ACTION_ACHAT_TITRE, UID)
+        ajoutPoints(ACTION_ACHAT_TITRE, UID, montantVariable=-prix)
         return True
     except mysql.connector.Error as err:
         connection.rollback()
@@ -725,6 +727,13 @@ def utilisateurQuiNontJamaisPublier() -> list[dict]:
     """
     return executer_select(query)
 
+def plusDepenseQuePointsDispo() -> list[dict]:
+    query = """
+        SELECT u.UID, u.UName, u.Email, u.RegistrationDate
+        FROM User u
+        WHERE (SELECT -SUM(t.Amount) FROM Transaction t WHERE t.UID=u.UID AND t.Amount < 0) > u.Points
+    """
+    return executer_select(query)
 
 def main():
     isActive = True
@@ -876,6 +885,9 @@ def main():
         elif request == CMD_TOP_OBJET and connected == 1:
             my_summaries = objetCosmetiqueLePlusAchete()
             print_structured_list(my_summaries, "Objet cosmétique le plus acheté")
+        elif request == CMD_PLUS_DEPENSE and connected == 1:
+            my_summaries = plusDepenseQuePointsDispo()
+            print_structured_list(my_summaries, "Utilisateurs ayant plus dépensé de points qu'ils en ont disponibles")
         elif request == CMD_EXIT:
             isActive = False
             connection.close()
