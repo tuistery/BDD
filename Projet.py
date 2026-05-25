@@ -631,43 +631,44 @@ def telechargerResume(SID:int, UID:int, downloadPath:str) :
             cursor.close()
  
 def afficherCommandes(connected: int):
+    os.system('clear')
     print("\n" + "=" * 64)
     print("                    MENU DES COMMANDES")
     print("=" * 64)
     if connected == 0:
         print("  Session")
-        print("   - connect        : se connecter / s'inscrire")
-        print("   - exit           : quitter l'application")
+        print("   - connection      : se connecter / s'inscrire")
+        print("   - quitter         : quitter l'application")
     else:
         print("  Utilisateur")
-        print("   - profil         : voir votre profil")
-        print("   - historique     : voir vos transactions")
-        print("   - classement     : voir le leaderboard (top 10)")
-        print("   - actifs         : utilisateurs avec resumes dans >= 3 matieres")
-        print("   - inactifs       : utilisateurs n'ayant jamais publie de resume")
-        print("   - gros_depensiers: utilisateurs ayant dépensé plus de points qu'ils n'en ont disponible")
+        print("   - profil          : voir votre profil")
+        print("   - historique      : voir vos transactions")
+        print("   - classement      : voir le leaderboard (top 10)")
+        print("   - actifs          : utilisateurs avec resumes dans >= 3 matieres")
+        print("   - inactifs        : utilisateurs n'ayant jamais publie de resume")
+        print("   - gros_depensiers : utilisateurs ayant dépensé plus de points qu'ils n'en ont disponible")
         print("")
         print("  Cours & Resumes")
-        print("   - list           : lister les cours")
-        print("   - ajouter        : ajouter un cours")
-        print("   - publier        : publier un resume")
-        print("   - get            : voir les resumes publics d'un cours")
-        print("   - get mine       : voir vos resumes d'un cours")
-        print("   - note           : noter un resume")
-        print("   - modifier_resume: modifier un de vos resumes")
-        print("   - supprimer_resume: supprimer un de vos resumes")
-        print("   - télécharger_resume: télécharger un résumé sur le disque")
-        print("   - meilleurs      : les resumes les mieux notes par cours")
-        print("   - top_cours      : le cours avec le plus de résumes")
-        print("   - moyenne        : nombre moyen de résumés par utilisateurs")
+        print("   - liste           : lister les cours")
+        print("   - ajouter         : ajouter un cours")
+        print("   - publier         : publier un resume")
+        print("   - consulter       : voir les resumes publics d'un cours")
+        print("   - mes_resumes     : voir vos resumes d'un cours")
+        print("   - noter           : noter un resume")
+        print("   - modifier        : modifier un de vos resumes")
+        print("   - supprimer       : supprimer un de vos resumes")
+        print("   - telecharger     : télécharger un résumé sur le disque")
+        print("   - meilleurs       : les resumes les mieux notes par cours")
+        print("   - top_cours       : le cours avec le plus de résumes")
+        print("   - moyenne         : nombre moyen de résumés par utilisateurs")
         print("")
         print("  Boutique")
-        print("   - boutique       : voir et acheter des objets")
-        print("   - inventaire     : voir vos objets")
-        print("   - top_objet      : voir l'objet le plus acheté")
-        print("   - activer_titre  : activer un titre possède")
-        print("   - activer_badge  : activer un badge possède")
-        print("   - exit           : quitter l'application")
+        print("   - boutique        : voir et acheter des objets")
+        print("   - inventaire      : voir vos objets")
+        print("   - top_objet       : voir l'objet le plus acheté")
+        print("   - activer_titre   : activer un titre possède")
+        print("   - activer_badge   : activer un badge possède")
+        print("   - quitter         : quitter l'application")
     print("=" * 64)
 
 def noteMaxDeChaqueResumé() -> list[dict]:
@@ -745,19 +746,20 @@ def main():
     while isActive:
         afficherCommandes(connected)
         request = input("Votre commande > ").strip().lower()
-        
+        show_pause = True
+
         if request == CMD_CONNECT and connected == 0:
-            Ctype = input("Register or Login : ").strip().lower()
+            Ctype = input("inscrire ou connecter : ").strip().lower()
             if Ctype == CMD_REGISTER:
                 eMail = input("Email : ")
-                userName = input("Username : ")
-                PassWord = input("Password : ")
+                userName = input("Utilisateur : ")
+                PassWord = input("Mot de passe : ")
                 CurrentUser = register(userName, PassWord, eMail)
                 if CurrentUser != None:
                     connected = 1
             elif Ctype == CMD_LOGIN:
-                userName = input("Username : ")
-                PassWord = input("Password : ")
+                userName = input("Utilisateur : ")
+                PassWord = input("Mot de passe : ")
                 CurrentUser= login(userName, PassWord)
                 if CurrentUser != None:
                     connected = 1
@@ -783,7 +785,7 @@ def main():
                 continue
             newTitle = input("Title : ")
             newDesc = input("Desc : ")
-            newVisibility = input("Visibility (default = private) :")
+            newVisibility = input("Visibilité (default = private) :")
             if (newVisibility == ""):
                 newVisibility = "private"
             filePath = input("Entrez le chemin du fichier :")
@@ -894,13 +896,17 @@ def main():
             print_structured_list(my_summaries, "Utilisateurs ayant plus dépensé de points qu'ils en ont disponibles")
         elif request == CMD_EXIT:
             isActive = False
+            show_pause = False
             connection.close()
             print("Au revoir !")
         elif connected == 0:
             print("Veuillez vous connecter")
+            show_pause = False
         else:
             print("Aucune commande n'a été spécifiée")
-            
+            show_pause = False
+        if isActive and show_pause:
+            input("\nAppuyez sur Entrée pour continuer...")
 
 if __name__ == "__main__":
     main()
