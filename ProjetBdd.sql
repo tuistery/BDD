@@ -233,6 +233,19 @@ INSERT INTO Action (Description, XpGain, CoinGain) VALUES
 ('Résumé mis en favori par un tiers', 15, 10),
 ('Première connexion de la journée', 5, 2);
 
+INSERT INTO Levels (RankLevel, XpRequired) VALUES
+(0, 0),
+(1, 100),
+(2, 200),
+(3, 300),
+(4, 400),
+(5, 500),
+(6, 600),
+(7, 700),
+(8, 800),
+(9, 900),
+(10, 1000);
+
 -- En cas de suppression d'un résumé, le fichier associé est aussi supprimé
 DELIMITER //
 

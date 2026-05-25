@@ -180,7 +180,15 @@ class DataUser:
     # Méthode __str__ pour print() direct
     def __str__(self):
         """Retourne une représentation string de l'utilisateur"""
-        return f"Username: {self.username} | Points: {self.points} | Title: {self.title} | XP: {self.Xp}"
+        query = """
+            SELECT RankLevel
+            FROM Levels
+            WHERE XpRequired <= %s
+            ORDER BY XpRequired DESC
+            LIMIT 1;
+        """
+        level = executer_select_une_ligne(query, (self.Xp,))["RankLevel"]
+        return f"Username: {self.username} | Points: {self.points} | Title: {self.title} | XP: {self.Xp} | Level: {level}"
     
     # Méthode __repr__ pour debugging
     def __repr__(self):
