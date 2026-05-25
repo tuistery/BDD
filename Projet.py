@@ -13,41 +13,43 @@ connection = mysql.connector.connect(
 )
 
 # Constantes pour le menu
-CMD_CONNECT = "connect"
-CMD_LOGIN = "login"
-CMD_REGISTER = "register"
-CMD_EXIT = "exit"
-CMD_LIST = "list"
-CMD_COURS = "ajouter"
+CMD_CONNECT = "connection"
+CMD_EXIT = "quitter"
+
+CMD_LOGIN = "connecter"
+CMD_REGISTER = "inscrire"
+
 CMD_PROFIL = "profil"
-CMD_PUBLIER = "publier"
-CMD_CONSULTER = "get"
-CMD_CONSULTER_MY_RESUMER = "get mine"
-CMD_NOTE = "note"
-CMD_MY_ITEMS = "inventaire"
+CMD_HISTORY = "historique"
+CMD_LEADERBOARD = "classement"
+CMD_LIST_ACTIVE_USERS = "actifs"
+CMD_LIST_INACTIVE_USERS = "inactifs"
+
+CMD_LIST_COURSES = "liste"
+CMD_ADD_COURSE = "ajouter"
+CMD_PUBLISH = "publier"
+CMD_VIEW_COURSE_SUMMARIES = "consulter"
+CMD_MY_SUMMARIES = "mes_resumes"
+CMD_RATE_SUMMARY = "noter"
+CMD_EDIT_SUMMARY = "modifier"
+CMD_DELETE_SUMMARY = "supprimer"
+CMD_DOWNLOAD_SUMMARY = "telecharger"
+CMD_TOP_SUMMARIES = "meilleurs"
+CMD_TOP_COURSE = "top_cours"
+CMD_AVG_SUMMARIES_PER_USER = "moyenne"
+
 CMD_SHOP = "boutique"
+CMD_INVENTORY = "inventaire"
+CMD_TOP_ITEM = "top_objet"
 CMD_ACTIVATE_TITLE = "activer_titre"
 CMD_ACTIVATE_BADGE = "activer_badge"
-# TODO
-CMD_LEADERBOARD = "classement"
-CMD_MULTI_MATIERES = "actifs"
-
-CMD_DOWNLOAD_SUMMARY = "telecharger_resume"
-CMD_EDIT_SUMMARY = "modifier_resume"
-CMD_DELETE_SUMMARY = "supprimer_resume"
-CMD_HISTORY = "historique"
-CMD_INNACTIF = "inactifs"
-CMD_MEILLEURS = "meilleurs"
-CMD_TOP_COURS = "top_cours"
-CMD_MOYENNE_PAR_USER = "moyenne"
-CMD_TOP_OBJET = "top_objet"
-CMD_PLUS_DEPENSE = "plus_depense"
+CMD_HIGH_SPENDERS = "gros_depensiers"
 
 # Libellés d'actions (doivent correspondre exactement à la table Action)
-ACTION_PUBLICATION_RESUME = "Publication d’un résumé"
-ACTION_EVALUATION_RESUME = "Évaluation d’un résumé"
-ACTION_INSCRIPTION = "Inscription sur la plateforme"
-ACTION_ACHAT_TITRE = "Achat d’un titre cosmétique"
+ACTION_PUBLISH_SUMMARY = "Publication d’un résumé"
+ACTION_RATE_SUMMARY = "Évaluation d’un résumé"
+ACTION_REGISTER = "Inscription sur la plateforme"
+ACTION_BUY_TITLE = "Achat d’un titre cosmétique"
 
 def print_structured_list(items, title="Resultats"):
     """Affiche proprement une liste de dictionnaires sous forme de tableau."""
@@ -231,7 +233,7 @@ def register(userName: str, password: str, email: str) -> DataUser:
         try:
             cursor.execute(query, val)
             connection.commit()
-            ajoutPoints(ACTION_INSCRIPTION, u.getId())
+            ajoutPoints(ACTION_REGISTER, u.getId())
             u.reload_user()
             print(f"Utilisateur {userName} enregistré avec succès !")
         except mysql.connector.Error as err:
@@ -302,7 +304,7 @@ def publierResumer(authorID: int, mnemonique:str,title:str,desc:str, filePath:st
             cursor.execute(query, val)
             connection.commit()
             print(f"Résumé avec le titre : {title} a été enregistré pour le cours {mnemonique} avec succès !")
-            ajoutPoints(ACTION_PUBLICATION_RESUME, authorID)
+            ajoutPoints(ACTION_PUBLISH_SUMMARY, authorID)
         except mysql.connector.Error as err:
             print(f"Erreur d'insertion : {err}")
         finally:
@@ -336,6 +338,7 @@ def publierNote(UID: int, SID: int, Note: int, Comment: str) -> None:
     params = (get_next_id("Notes", "NID"), UID, SID, Note, Comment)
     if executer_write(query, params) != -1:
         print(f"Note {Note} publiée avec succès !")
+        ajoutPoints(ACTION_RATE_SUMMARY, UID)
 
 def consulterInventaire(UID: int) -> list[dict]:
     query = "SELECT * FROM Inventory WHERE OwnerID = %s"
@@ -425,7 +428,7 @@ def acheterObjet(UID:int,OID:int):
         print(f"Objet '{objet['Name']}' acheté pour {prix} points.")
 
         # Récompense XP/coins définie dans la table Action.
-        ajoutPoints(ACTION_ACHAT_TITRE, UID, montantVariable=-prix)
+        ajoutPoints(ACTION_BUY_TITLE, UID, montantVariable=-prix)
         return True
     except mysql.connector.Error as err:
         connection.rollback()
@@ -642,6 +645,7 @@ def afficherCommandes(connected: int):
         print("   - classement     : voir le leaderboard (top 10)")
         print("   - actifs         : utilisateurs avec resumes dans >= 3 matieres")
         print("   - inactifs       : utilisateurs n'ayant jamais publie de resume")
+        print("   - gros_depensiers: utilisateurs ayant dépensé plus de points qu'ils n'en ont disponible")
         print("")
         print("  Cours & Resumes")
         print("   - list           : lister les cours")
@@ -757,9 +761,9 @@ def main():
                 CurrentUser= login(userName, PassWord)
                 if CurrentUser != None:
                     connected = 1
-        elif request == CMD_LIST and connected == 1:
+        elif request == CMD_LIST_COURSES and connected == 1:
             print_structured_list(getListCours(), "Liste des cours")
-        elif request == CMD_COURS and connected == 1:
+        elif request == CMD_ADD_COURSE and connected == 1:
             newMnemonic = input("Mnemonic : ").strip().upper()
             newName = input("Name : ")
             faculty = input("Faculty : ")
@@ -772,7 +776,7 @@ def main():
                 print(f"Badge actif: {active_badge['Symbol']} {active_badge['Name']}")
             else:
                 print("Badge actif: Aucun")
-        elif request == CMD_PUBLIER and connected == 1:
+        elif request == CMD_PUBLISH and connected == 1:
             newMnemonic = input("Mnemonic : ").strip().upper()
             if not getCourseByMnemonic(newMnemonic):
                 print(f"Le cours '{newMnemonic}' n'existe pas dans la table Course.")
@@ -785,13 +789,13 @@ def main():
             filePath = input("Entrez le chemin du fichier :")
             publierResumer(CurrentUser.getId(),newMnemonic,newTitle,newDesc, filePath, newVisibility)
             CurrentUser.reload_user()
-        elif request == CMD_CONSULTER and connected == 1:
+        elif request == CMD_VIEW_COURSE_SUMMARIES and connected == 1:
             mnemonic = input("Quel cours voulez voir les résumés ? : ").strip().upper()
             print_structured_list(consulterResumé(mnemonic), f"Resumes du cours {mnemonic}")
-        elif request == CMD_CONSULTER_MY_RESUMER and connected == 1:
+        elif request == CMD_MY_SUMMARIES and connected == 1:
             mnemonic = input("Quel cours voulez voir les résumés ? : ").strip().upper()
             print_structured_list(consulterResumé(mnemonic,CurrentUser.getId()), f"Mes resumes du cours {mnemonic}")
-        elif request == CMD_NOTE and connected == 1:
+        elif request == CMD_RATE_SUMMARY and connected == 1:
             mnemonic = input("Quel cours voulez voir les résumés pour les noter ? : ").strip().upper()
             list_course = consulterResumé(mnemonic)
             print_structured_list(list_course, f"Resumes a noter ({mnemonic})")
@@ -803,7 +807,7 @@ def main():
             note = int(input("Note : "))
             comment = input("Comment : ")
             publierNote(CurrentUser.getId(),sid,note,comment)
-        elif request == CMD_MY_ITEMS and connected == 1:
+        elif request == CMD_INVENTORY and connected == 1:
             print_structured_list(consulterInventaire(CurrentUser.getId()), "Mon inventaire")
         elif request == CMD_ACTIVATE_TITLE and connected == 1:
             titles = consulterTitresPossedes(CurrentUser.getId())
@@ -840,7 +844,7 @@ def main():
             print_structured_list(consulterHistorique(CurrentUser.getId()), "Historique")
         elif request == CMD_LEADERBOARD and connected == 1:
             print_structured_list(consulterClassement(), "Classement Top 10")
-        elif request == CMD_MULTI_MATIERES and connected == 1:
+        elif request == CMD_LIST_ACTIVE_USERS and connected == 1:
             print_structured_list(consulterUsersMultiMatieres(), "Utilisateurs actifs (>= 3 matieres)")
         elif request == CMD_DOWNLOAD_SUMMARY and connected == 1:
             sid = int(input("Quel résumé voulez-vous lire ? (entrer le SID) : "))
@@ -870,22 +874,22 @@ def main():
                 print("SID invalide")
                 continue
             supprimerResumer(sid,CurrentUser.getId())
-        elif request == CMD_INNACTIF and connected == 1:
+        elif request == CMD_LIST_INACTIVE_USERS and connected == 1:
             my_summaries = utilisateurQuiNontJamaisPublier()
             print_structured_list(my_summaries, "User qui n'ont pas publié")
-        elif request == CMD_MEILLEURS and connected == 1:
+        elif request == CMD_TOP_SUMMARIES and connected == 1:
             my_summaries = noteMaxDeChaqueResumé()
             print_structured_list(my_summaries, "Meilleurs resumés par cours")
-        elif request == CMD_TOP_COURS and connected == 1:
+        elif request == CMD_TOP_COURSE and connected == 1:
             my_summaries = coursAvecPlusDeResumes()
             print_structured_list(my_summaries, "Cours avec le plus de résumés")
-        elif request == CMD_MOYENNE_PAR_USER and connected == 1:
+        elif request == CMD_AVG_SUMMARIES_PER_USER and connected == 1:
             my_summaries = moyenneResumeParUtilisateur()
             print_structured_list(my_summaries, "Nombre moyen de résumés publiés par utilisateur")
-        elif request == CMD_TOP_OBJET and connected == 1:
+        elif request == CMD_TOP_ITEM and connected == 1:
             my_summaries = objetCosmetiqueLePlusAchete()
             print_structured_list(my_summaries, "Objet cosmétique le plus acheté")
-        elif request == CMD_PLUS_DEPENSE and connected == 1:
+        elif request == CMD_HIGH_SPENDERS and connected == 1:
             my_summaries = plusDepenseQuePointsDispo()
             print_structured_list(my_summaries, "Utilisateurs ayant plus dépensé de points qu'ils en ont disponibles")
         elif request == CMD_EXIT:
