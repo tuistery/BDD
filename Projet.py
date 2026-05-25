@@ -13,7 +13,7 @@ connection = mysql.connector.connect(
 )
 
 # Constantes pour le menu
-CMD_CONNECT = "connection"
+CMD_CONNECT = "connexion"
 CMD_EXIT = "quitter"
 
 CMD_LOGIN = "connecter"
@@ -51,12 +51,12 @@ ACTION_RATE_SUMMARY = "Évaluation d’un résumé"
 ACTION_REGISTER = "Inscription sur la plateforme"
 ACTION_BUY_TITLE = "Achat d’un titre cosmétique"
 
-def print_structured_list(items, title="Resultats"):
+def print_structured_list(items, title="Résultats"):
     """Affiche proprement une liste de dictionnaires sous forme de tableau."""
     print(f"\n=== {title} ===")
 
     if not items:
-        print("Aucun resultat.")
+        print("Aucun résultat.")
         return
 
     if not isinstance(items, list):
@@ -92,15 +92,15 @@ def print_structured_list(items, title="Resultats"):
         )
         print(line)
 
-def get_next_id(table, id):
+def get_next_id(table, column):
     cursor = connection.cursor()
-    query = f"SELECT COALESCE(MAX({id}), 0) + 1 FROM {table}"
+    query = f"SELECT COALESCE(MAX({column}), 0) + 1 FROM {table}"
     cursor.execute(query)
     result = cursor.fetchone()
     cursor.close()
     return result[0]
 
-def executer_select(query: str, params: tuple=None) -> list[dict]:
+def execute_select(query: str, params: tuple=None) -> list[dict]:
     if not connection.is_connected():
         return []
     cursor = connection.cursor(dictionary=True)
@@ -113,7 +113,7 @@ def executer_select(query: str, params: tuple=None) -> list[dict]:
     finally:
         cursor.close()
 
-def executer_select_une_ligne(query: str, params: tuple=None) -> dict | None:
+def execute_select_one(query: str, params: tuple=None) -> dict | None:
     if not connection.is_connected():
         return None
     cursor = connection.cursor(dictionary=True)
@@ -126,7 +126,7 @@ def executer_select_une_ligne(query: str, params: tuple=None) -> dict | None:
     finally:
         cursor.close()
 
-def executer_write(query: str, params: tuple=None) -> int:
+def execute_write(query: str, params: tuple=None) -> int:
     if not connection.is_connected():
         return -1
     cursor = connection.cursor(dictionary=True)
@@ -142,39 +142,39 @@ def executer_write(query: str, params: tuple=None) -> int:
         cursor.close()
 
 class DataUser:
-    def __init__(self, username: str, password: str, email: str, date_="2026-04-03", points=0, Xp=0, title="Null", id=-1):
-        if id == -1:
-            self.userId = get_next_id("User", "UID")
+    def __init__(self, username: str, password: str, email: str, date_="2026-04-03", points=0, xp=0, title="Null", user_id=-1):
+        if user_id == -1:
+            self.user_id = get_next_id("User", "UID")
         else:
-            self.userId = id
+            self.user_id = user_id
             
         self.username = username
         self.email = email
         self.password = password
         self.date_ = date_
         self.points = points
-        self.Xp = Xp
+        self.xp = xp
         self.title = title
 
-    def getEmail(self) -> str: return self.email
-    def getUsername(self) -> str: return self.username
-    def getPoints(self): return self.points
-    def getXp(self): return self.Xp
-    def getTitle(self) -> str: return self.title
-    def getId(self) -> int: return self.userId
-    def displayInfo(self):
+    def get_email(self) -> str: return self.email
+    def get_username(self) -> str: return self.username
+    def get_points(self): return self.points
+    def get_xp(self): return self.xp
+    def get_title(self) -> str: return self.title
+    def get_id(self) -> int: return self.user_id
+    def display_info(self):
         """Affiche les informations principales de l'utilisateur"""
-        print(f"Username: {self.username}")
+        print(f"Utilisateur: {self.username}")
         print(f"Points: {self.points}")
-        print(f"Title: {self.title}")
-        print(f"XP: {self.Xp}")
+        print(f"Titre: {self.title}")
+        print(f"XP: {self.xp}")
     
     def reload_user(self) -> None:
         query = "SELECT Points, Xp, Title FROM User WHERE UID = %s"
-        result = executer_select_une_ligne(query, (self.getId(),))
+        result = execute_select_one(query, (self.get_id(),))
         if result:
             self.points = result["Points"]
-            self.Xp = result["Xp"]
+            self.xp = result["Xp"]
             self.title = result["Title"]
     
     # Méthode __str__ pour print() direct
@@ -187,182 +187,150 @@ class DataUser:
             ORDER BY XpRequired DESC
             LIMIT 1;
         """
-        level = executer_select_une_ligne(query, (self.Xp,))["RankLevel"]
-        return f"Username: {self.username} | Points: {self.points} | Title: {self.title} | XP: {self.Xp} | Level: {level}"
+        level_row = execute_select_one(query, (self.xp,))["RankLevel"]
+        return f"Utilisateur: {self.username} | Points: {self.points} | Titre: {self.title} | XP: {self.xp} | Niveau: {level_row}"
     
     # Méthode __repr__ pour debugging
     def __repr__(self):
         """Retourne une représentation détaillée de l'utilisateur"""
-        return f"DataUser(id={self.userId}, username='{self.username}', points={self.points}, title='{self.title}', Xp={self.Xp})"
+        return f"DataUser(id={self.user_id}, username='{self.username}', points={self.points}, title='{self.title}', Xp={self.xp})"
 
-def getAmount(desc: str) -> int:
+def get_amount(desc: str) -> int:
     query = "SELECT CoinGain FROM Action WHERE Description = %s"
-    result = executer_select_une_ligne(query, (desc,))
+    result = execute_select_one(query, (desc,))
     if result:
         return result["CoinGain"]
     return 0
 
-def ajoutTransaction(typeAction: str, userid: int, montantVariable: int = None) -> None:
+def add_transaction(action_type: str, user_id: int, custom_amount: int = None) -> None:
     query = "INSERT INTO Transaction (TID,Description,UID,Amount,Date) VALUES (%s,%s,%s,%s,%s)"
-    montant = montantVariable if montantVariable is not None else getAmount(typeAction)
-    params = (get_next_id("Transaction", "TID"), typeAction, userid, montant, date.today())
-    if executer_write(query, params) != -1:
-        print(f"Ajout de la transaction de l'utilisateur {userid} avec succès !")
+    amount = custom_amount if custom_amount is not None else get_amount(action_type)
+    params = (get_next_id("Transaction", "TID"), action_type, user_id, amount, date.today())
+    if execute_write(query, params) != -1:
+        print(f"Ajout de la transaction de l'utilisateur {user_id} avec succès !")
 
-def ajoutPoints(typeAction: str, id: int, montantVariable: int = None) -> None:
-    if connection.is_connected():
-        cursor = connection.cursor(dictionary=True)
-        query = """
-            UPDATE User
-            SET Xp = Xp + (SELECT XpGain FROM Action WHERE Description = %s),
-                Points = Points + (SELECT CoinGain FROM Action WHERE Description = %s)
-            WHERE UID = %s
-        """
-        val = (typeAction,typeAction,id)
-        try:
-            cursor.execute(query, val)
-            connection.commit()
-            print(f"Ajout des points et de l'xp a l'utilisateur {id} avec succès !")
-            ajoutTransaction(typeAction,id, montantVariable)
-        except mysql.connector.Error as err:
-            print(f"Erreur de select : {err}")
-        finally:
-            cursor.close()
+def add_points(action_type: str, user_id: int, custom_amount: int = None) -> None:
+    query = """
+        UPDATE User
+        SET Xp = Xp + (SELECT XpGain FROM Action WHERE Description = %s),
+            Points = Points + (SELECT CoinGain FROM Action WHERE Description = %s)
+        WHERE UID = %s
+    """
+    params = (action_type, action_type, user_id)
+    if execute_write(query, params) != -1:
+        print(f"Ajout des points et de l'XP a l'utilisateur {user_id} avec succès !")
+        add_transaction(action_type, user_id, custom_amount)
+
+def register(username: str, password: str, email: str) -> DataUser | None:
+    already_exists = execute_select_one("SELECT UID FROM User WHERE Uname = %s OR Email = %s",
+                                        (username, email)
+    )
+    if already_exists:
+        print("Email ou nom d'utilisateur déjà utilisé.")
+        return None
     
-def register(userName: str, password: str, email: str) -> DataUser:
     password = password.encode('utf-8')
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password, salt)
-    u = DataUser(userName, hashed, email,date.today())
-    if connection.is_connected():
-        cursor = connection.cursor(dictionary=True)
-        query = "INSERT INTO User (UID, UName, Pass, Email, RegistrationDate, Points, Xp, Title) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-        val = (u.getId(), u.getUsername(), u.password, u.getEmail(), u.date_, u.getPoints(), u.getXp(), u.getTitle())
-        try:
-            cursor.execute(query, val)
-            connection.commit()
-            ajoutPoints(ACTION_REGISTER, u.getId())
-            u.reload_user()
-            print(f"Utilisateur {userName} enregistré avec succès !")
-        except mysql.connector.Error as err:
-            print(f"Erreur d'insertion : {err}")
-        finally:
-            cursor.close()
-    return u
+    new_user = DataUser(username, hashed, email, date.today())
+    query = "INSERT INTO User (UID, UName, Pass, Email, RegistrationDate, Points, Xp, Title) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+    params = (new_user.get_id(), new_user.get_username(), new_user.password, new_user.get_email(), new_user.date_, new_user.get_points(), new_user.get_xp(), new_user.get_title())
+    if execute_write(query, params) != -1:
+        add_points(ACTION_REGISTER, new_user.get_id())
+        new_user.reload_user()
+        return new_user
+    return None
 
-def login(userName: str, password: str) -> DataUser:
+def login(username: str, password: str) -> DataUser | None:
     password = password.encode('utf-8')
+    query = "SELECT * FROM User WHERE UName = %s"
+    result = execute_select_one(query, (username,)) # Le tuple (valeur,) est important
+    if result and bcrypt.checkpw(password, result["Pass"].encode('utf-8')):
+        print("Connexion réalisée avec succès")
+        return DataUser(
+            result["UName"], 
+            result["Pass"], 
+            result["Email"], 
+            result["RegistrationDate"], 
+            result["Points"], 
+            result["Xp"], 
+            result["Title"], 
+            result["UID"]
+        )
+    else:
+        print("Identifiant ou mot de passe incorrect.")
+        return None
+
+def get_list_courses() -> list[dict]:
+    query = "SELECT * FROM Course"
+    return execute_select(query)
+
+def get_course_by_mnemonic(mnemonic: str) -> dict | None:
+    query = "SELECT Mnemonic FROM Course WHERE Mnemonic = %s"
+    return execute_select_one(query, (mnemonic,))
+
+def add_course(mnemonic: str, name: str, faculty: str, credits: int) -> None:
+    query = "INSERT INTO Course (Mnemonic,Name,Faculty,Credits) VALUES (%s, %s, %s, %s)"
+    params = (mnemonic, name, faculty, credits)
+    if execute_write(query, params) != -1:
+        print(f"Cours {name} enregistré avec succès !")
+
+def publish_summary(author_id: int, mnemonic: str, title: str, desc:str, file_path:str, visibility = "private") -> bool:
     if connection.is_connected():
         cursor = connection.cursor(dictionary=True)
-        query = "SELECT * FROM User WHERE UName = %s"
-        cursor.execute(query, (userName,)) # Le tuple (valeur,) est important
-        resultat = cursor.fetchone()
-        cursor.close()
 
-        if resultat and  bcrypt.checkpw(password, resultat["Pass"].encode('utf-8')):
-            print("Le login a fonctionné avec succès")
-            return DataUser(
-                resultat["UName"], 
-                resultat["Pass"], 
-                resultat["Email"], 
-                resultat["RegistrationDate"], 
-                resultat["Points"], 
-                resultat["Xp"], 
-                resultat["Title"], 
-                resultat["UID"]
-            )
-        else:
-            print("Utilisateur introuvable ou mauvais mot de passe.")
-            return None
-
-def getListCours() -> list[dict]:
-    query = "SELECT * FROM Course"
-    return executer_select(query)
-
-def getCourseByMnemonic(mnemonic: str) -> dict | None:
-    query = "SELECT Mnemonic FROM Course WHERE Mnemonic = %s"
-    return executer_select_une_ligne(query, (mnemonic,))
-
-def ajoutCours(newMnemonic: str, newName: str, faculty: str, newCredit: int) -> None:
-    query = "INSERT INTO Course (Mnemonic,Name,Faculty,Credits) VALUES (%s, %s, %s, %s)"
-    params = (newMnemonic, newName, faculty, newCredit)
-    if executer_write(query, params) != -1:
-        print(f"Cours {newName} enregistré avec succès !")
-
-def publierResumer(authorID: int, mnemonique:str,title:str,desc:str, filePath:str, visibility = "private"):
-     if connection.is_connected():
-        cursor = connection.cursor(dictionary=True)
-
-        try :
-            with open(filePath, 'rb') as f:
-                    fileContent = f.read()
-        except Exception as e :
-            print(f"Impossible de lire le fichier : {e}")
-            return
-
-        fileQuery = "INSERT INTO Files (Name, Size, Content) VALUES (%s, %s, %s)"
-        fileName = f"{authorID}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-        fileVal = (fileName, len(fileContent), fileContent)
-
-        query = "INSERT INTO Summary (SID,AuthorID,FileID,Course,PublicationDate,Title,Description,Version,Visibility) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
         try:
-            cursor.execute(fileQuery, fileVal)
-            fileID = cursor.lastrowid
-            val = (get_next_id("Summary", "SID"),authorID,fileID,mnemonique,date.today(),title,desc,"1.0",visibility)
-            cursor.execute(query, val)
+            with open(file_path, 'rb') as f:
+                    file_content = f.read()
+        except Exception as e:
+            print(f"Impossible de lire le fichier : {e}")
+            return False
+
+        file_query = "INSERT INTO Files (Name, Size, Content) VALUES (%s, %s, %s)"
+        file_name = f"{author_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        file_params = (file_name, len(file_content), file_content)
+
+        query = "INSERT INTO Summary (SID, AuthorID, FileID, Course, PublicationDate, Title, Description, Version, Visibility) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        try:
+            cursor.execute(file_query, file_params)
+            file_id = cursor.lastrowid
+            params = (get_next_id("Summary", "SID"), author_id, file_id, mnemonic, date.today(), title, desc, "1.0", visibility)
+            cursor.execute(query, params)
             connection.commit()
-            print(f"Résumé avec le titre : {title} a été enregistré pour le cours {mnemonique} avec succès !")
-            ajoutPoints(ACTION_PUBLISH_SUMMARY, authorID)
+            print(f"Résumé avec le titre : {title} a été enregistré pour le cours {mnemonic} avec succès !")
+            add_points(ACTION_PUBLISH_SUMMARY, author_id)
+            return True
         except mysql.connector.Error as err:
             print(f"Erreur d'insertion : {err}")
+            return False
         finally:
             cursor.close()
 
-def consulterResumé(mnemonic:str , userId = -1):
-    resultat = []
-    if not connection.is_connected():
-        return resultat
-
-    cursor = connection.cursor(dictionary=True)
-    if userId == -1:
+def get_course_summaries(mnemonic:str , author_id = -1) -> list[dict]:
+    if author_id == -1:
         query = "SELECT * FROM Summary WHERE Course = %s AND Visibility = 'public'"
         params = (mnemonic,)
     else:
         query = "SELECT * FROM Summary WHERE Course = %s AND AuthorID = %s"
-        params = (mnemonic, userId)
+        params = (mnemonic, author_id)
+    return execute_select(query, params)
 
-    try:
-        cursor.execute(query, params)
-        resultat = cursor.fetchall()
-        print(f"Demande de tout les resumés du cours : {mnemonic} avec succès !")
-    except mysql.connector.Error as err:
-        print(f"Erreur de select : {err}")
-    finally:
-        cursor.close()
-    return resultat
+def rate_summary(user_id: int, summary_id: int, rating: int, comment: str) -> None:
+    query = "INSERT INTO Notes (NID, UID, SID, Note, Comment) VALUES (%s, %s, %s, %s, %s)"
+    params = (get_next_id("Notes", "NID"), user_id, summary_id, rating, comment)
+    if execute_write(query, params) != -1:
+        print(f"Note {rating} publiée avec succès !")
+        add_points(ACTION_RATE_SUMMARY, user_id)
 
-def publierNote(UID: int, SID: int, Note: int, Comment: str) -> None:
-    query = "INSERT INTO Notes (NID,UID,SID,Note,Comment) VALUES (%s, %s, %s, %s, %s)"
-    params = (get_next_id("Notes", "NID"), UID, SID, Note, Comment)
-    if executer_write(query, params) != -1:
-        print(f"Note {Note} publiée avec succès !")
-        ajoutPoints(ACTION_RATE_SUMMARY, UID)
-
-def consulterInventaire(UID: int) -> list[dict]:
+def get_inventory(user_id: int) -> list[dict]:
     query = "SELECT * FROM Inventory WHERE OwnerID = %s"
-    return executer_select(query, (UID,))
+    return execute_select(query, (user_id,))
 
-def ajoutInventaire(UID: int, OID: int) ->None:
-    query = "INSERT INTO Inventory (OID,OwnerID) VALUES (%s, %s)"
-    params = (OID, UID)
-    if executer_write(query, params) != -1:
-        print(f"Objet {OID} ajouté à l'inventaire de l'utilisateur {UID} avec succès !")
-
-def consulterBoutique() -> list[dict]:
+def get_shop_items() -> list[dict]:
     query = "SELECT * FROM Object"
-    return executer_select(query)
+    return execute_select(query)
 
-def consulterTitresPossedes(UID: int) -> list[dict]:
+def get_owned_items(user_id: int) -> list[dict]:
     query = """
         SELECT i.OID, t.Label, i.isActive
         FROM Inventory i
@@ -370,9 +338,9 @@ def consulterTitresPossedes(UID: int) -> list[dict]:
         WHERE i.OwnerID = %s
         ORDER BY i.OID
     """
-    return executer_select(query, (UID,))
+    return execute_select(query, (user_id,))
 
-def consulterBadgesPossedes(UID: int) ->list[dict]:
+def get_owned_badges(user_id: int) -> list[dict]:
     query = """
         SELECT i.OID, b.Symbol, o.Name, i.isActive
         FROM Inventory i
@@ -381,9 +349,9 @@ def consulterBadgesPossedes(UID: int) ->list[dict]:
         WHERE i.OwnerID = %s
         ORDER BY i.OID
     """
-    return executer_select(query, (UID,))
+    return execute_select(query, (user_id,))
 
-def consulterBadgeActif(UID: int) -> dict | None:
+def get_active_badge(user_id: int) -> dict | None:
     query = """
         SELECT b.Symbol, o.Name
         FROM Inventory i
@@ -392,34 +360,34 @@ def consulterBadgeActif(UID: int) -> dict | None:
         WHERE i.OwnerID = %s AND i.isActive = TRUE
         LIMIT 1
     """
-    return executer_select_une_ligne(query, (UID,))
+    return execute_select_one(query, (user_id,))
 
-def acheterObjet(UID:int,OID:int):
+def buy_item(user_id: int, object_id: int) -> bool:
     if not connection.is_connected():
         return False
 
     cursor = connection.cursor(dictionary=True)
     try:
-        cursor.execute("SELECT Price, Name FROM Object WHERE OID = %s", (OID,))
-        objet = cursor.fetchone()
-        if not objet:
+        cursor.execute("SELECT Price, Name FROM Object WHERE OID = %s", (object_id,))
+        item = cursor.fetchone()
+        if not item:
             print("Objet introuvable.")
             return False
 
-        prix = int(float(objet["Price"]))
-        cursor.execute("SELECT Points FROM User WHERE UID = %s", (UID,))
+        price = int(float(item["Price"]))
+        cursor.execute("SELECT Points FROM User WHERE UID = %s", (user_id,))
         user_data = cursor.fetchone()
         if not user_data:
             print("Utilisateur introuvable.")
             return False
 
-        if user_data["Points"] < prix:
+        if user_data["Points"] < price:
             return False
 
         # Débit atomique pour éviter les achats simultanés au-delà du solde.
         cursor.execute(
             "UPDATE User SET Points = Points - %s WHERE UID = %s AND Points >= %s",
-            (prix, UID, prix)
+            (price, user_id, price)
         )
         if cursor.rowcount == 0:
             connection.rollback()
@@ -430,13 +398,13 @@ def acheterObjet(UID:int,OID:int):
             VALUES (%s, %s, 1)
             ON DUPLICATE KEY UPDATE Quantity = Quantity + 1
             """,
-            (OID, UID)
+            (object_id, user_id)
         )
         connection.commit()
-        print(f"Objet '{objet['Name']}' acheté pour {prix} points.")
+        print(f"Objet '{item['Name']}' acheté pour {price} points.")
 
         # Récompense XP/coins définie dans la table Action.
-        ajoutPoints(ACTION_BUY_TITLE, UID, montantVariable=-prix)
+        add_points(ACTION_BUY_TITLE, user_id, custom_amount=-price)
         return True
     except mysql.connector.Error as err:
         connection.rollback()
@@ -445,7 +413,7 @@ def acheterObjet(UID:int,OID:int):
     finally:
         cursor.close()
 
-def activerTitle(UID:int,OID:int):
+def activate_title(user_id: int, object_id: int) -> bool:
     if not connection.is_connected():
         return False
 
@@ -458,7 +426,7 @@ def activerTitle(UID:int,OID:int):
             JOIN Title t ON t.OID = i.OID
             WHERE i.OwnerID = %s AND i.OID = %s
             """,
-            (UID, OID)
+            (user_id, object_id)
         )
         title_row = cursor.fetchone()
         if not title_row:
@@ -472,15 +440,15 @@ def activerTitle(UID:int,OID:int):
             SET i.isActive = FALSE
             WHERE i.OwnerID = %s
             """,
-            (UID,)
+            (user_id,)
         )
         cursor.execute(
             "UPDATE Inventory SET isActive = TRUE WHERE OwnerID = %s AND OID = %s",
-            (UID, OID)
+            (user_id, object_id)
         )
         cursor.execute(
             "UPDATE User SET Title = %s WHERE UID = %s",
-            (title_row["Label"], UID)
+            (title_row["Label"], user_id)
         )
         connection.commit()
         print(f"Titre activé : {title_row['Label']}")
@@ -492,7 +460,7 @@ def activerTitle(UID:int,OID:int):
     finally:
         cursor.close()
 
-def activerBadge(UID:int,OID:int):
+def activate_badge(user_id: int, object_id: int) -> bool:
     if not connection.is_connected():
         return False
 
@@ -506,7 +474,7 @@ def activerBadge(UID:int,OID:int):
             JOIN Object o ON o.OID = i.OID
             WHERE i.OwnerID = %s AND i.OID = %s
             """,
-            (UID, OID)
+            (user_id, object_id)
         )
         badge_row = cursor.fetchone()
         if not badge_row:
@@ -520,11 +488,11 @@ def activerBadge(UID:int,OID:int):
             SET i.isActive = FALSE
             WHERE i.OwnerID = %s
             """,
-            (UID,)
+            (user_id,)
         )
         cursor.execute(
             "UPDATE Inventory SET isActive = TRUE WHERE OwnerID = %s AND OID = %s",
-            (UID, OID)
+            (user_id, object_id)
         )
         connection.commit()
         print(f"Badge activé : {badge_row['Symbol']} {badge_row['Name']}")
@@ -536,20 +504,20 @@ def activerBadge(UID:int,OID:int):
     finally:
         cursor.close()
 
-def consulterClassement() -> list[dict]:
+def get_leaderboard() -> list[dict]:
     query = """
         SELECT UName, Points, Xp, Title
         FROM User
         ORDER BY Points DESC, Xp DESC, UName ASC
         LIMIT 10
     """
-    leaderboard = executer_select(query)
+    leaderboard = execute_select(query)
     if leaderboard:
         for idx, row in enumerate(leaderboard, start=1):
             row["Rang"] = idx
     return leaderboard
 
-def consulterUsersMultiMatieres() -> list[dict]:
+def get_active_users() -> list[dict]:
     query = """
         SELECT UName
         FROM User u
@@ -559,127 +527,120 @@ def consulterUsersMultiMatieres() -> list[dict]:
             WHERE AuthorID = u.UID
         ) >= 3
     """
-    return executer_select(query)
+    return execute_select(query)
 
-def consulterHistorique(UID: int) -> list[dict]:
+def get_history(user_id: int) -> list[dict]:
     query = """
         SELECT TID, Description, Amount, Date
         FROM Transaction
         WHERE UID = %s
         ORDER BY Date DESC
     """
-    return executer_select(query, (UID,))
+    return execute_select(query, (user_id,))
 
-def modifierResumer(SID: int, UID: int, newTitle: str, newDesc: str) -> bool:
+def update_summary(summary_id: int, author_id: int, new_title: str, new_desc: str) -> bool:
     query = """
         UPDATE Summary
         SET Title = %s, Description = %s
         WHERE SID = %s AND AuthorID = %s
     """
-    params = (newTitle, newDesc, SID, UID)
-    rowcount = executer_write(query, params)
-    if rowcount == -1:
+    params = (new_title, new_desc, summary_id, author_id)
+    row_count = execute_write(query, params)
+    if row_count == -1:
         return False
-    elif rowcount == 0:
+    elif row_count == 0:
         print("Résumé introuvable ou vous n'êtes pas l'auteur.")
         return False
     else:
-        print(f"Résumé {SID} modifié avec succès !")
+        print(f"Résumé {summary_id} modifié avec succès !")
         return True
 
-def consulterMesResumes(UID: int) -> list[dict]:
+def get_own_summaries(author_id: int) -> list[dict]:
     query = """
         SELECT * 
         FROM Summary 
         WHERE AuthorID = %s 
         ORDER BY PublicationDate DESC
     """
-    return executer_select(query, (UID,))
+    return execute_select(query, (author_id,))
 
-def supprimerResumer(SID: int, UID: int) -> None:
+def delete_summary(summary_id: int, author_id: int) -> bool:
     query = "DELETE FROM Summary WHERE SID = %s AND AuthorID = %s"
-    params = (SID,UID)
-    if executer_write(query, params) != -1:
-        print(f"Résumé {SID} supprimé avec succès !")
+    params = (summary_id, author_id)
+    if execute_write(query, params) != -1:
+        print(f"Résumé {summary_id} supprimé avec succès !")
+        return True
+    return False
 
-def telechargerResume(SID:int, UID:int, downloadPath:str) :
-    if connection.is_connected() :
-        cursor = connection.cursor(dictionary=True)
-        query = """
+def download_summary(summary_id: int, user_id: int, download_path: str) -> None:
+    query = """
         SELECT f.Name, f.Content 
         FROM Files f, Summary s
         WHERE s.FileID=f.FID AND s.SID=%s AND (s.AuthorID=%s OR s.Visibility='public' OR s.Visibility='restricted')
-        """
-        val = (SID, UID)
-        try :
-            cursor.execute(query, val)
-            file = cursor.fetchone()
-            if file is None :
-                print("Vous n'avez pas accès à ce fichier ou le fichier est inexistant")
-                return
-            if downloadPath == "" :
-                downloadPath = file['Name']
-            elif not os.path.isdir(downloadPath) :
-                print(f"Dossier inexistant : {downloadPath}")
-                return
-            else :
-                downloadPath = os.path.join(downloadPath, file['Name'])
-            try :
-                with open(downloadPath, 'wb') as f :
-                    f.write(file['Content'])
-            except Exception as e :
-                print(f"Impossible d'écrire dans ce dossier : {e}")
-                return
-            
-            print(f"Fichier enregistré sur {downloadPath}")
-        
-        except mysql.connector.Error as err :
-            print(f"Erreur : {err}")
-        finally :
-            cursor.close()
+    """
+    params = (summary_id, user_id)
+    file_data = execute_select_one(query, params)
+    if file_data is None:
+        print("Vous n'avez pas accès à ce fichier ou le fichier est inexistant")
+        return
+    if download_path == "":
+        download_path = file_data['Name']
+    elif not os.path.isdir(download_path):
+        print(f"Dossier inexistant : {download_path}")
+        return
+    else:
+        download_path = os.path.join(download_path, file_data['Name'])
+    try:
+        with open(download_path, 'wb') as f :
+            f.write(file_data['Content'])
+    except Exception as e:
+        print(f"Impossible d'écrire dans ce dossier : {e}")
+        return
+    
+    print(f"Fichier enregistré sur {download_path}")
  
-def afficherCommandes(connected: int):
+def show_commands(connected: int) -> None:
     os.system('clear')
     print("\n" + "=" * 64)
     print("                    MENU DES COMMANDES")
     print("=" * 64)
     if connected == 0:
         print("  Session")
-        print("   - connection      : se connecter / s'inscrire")
+        print("   - connexion       : se connecter / s'inscrire")
         print("   - quitter         : quitter l'application")
     else:
         print("  Utilisateur")
         print("   - profil          : voir votre profil")
         print("   - historique      : voir vos transactions")
         print("   - classement      : voir le leaderboard (top 10)")
-        print("   - actifs          : utilisateurs avec resumes dans >= 3 matieres")
-        print("   - inactifs        : utilisateurs n'ayant jamais publie de resume")
-        print("   - gros_depensiers : utilisateurs ayant dépensé plus de points qu'ils n'en ont disponible")
+        print("   - actifs          : résumés dans >= 3 matières")
+        print("   - inactifs        : jamais publié de résumé")
+        print("   - gros_depensiers : utilisateurs en déficit de points")
         print("")
-        print("  Cours & Resumes")
+        print("  Cours & Résumés")
         print("   - liste           : lister les cours")
         print("   - ajouter         : ajouter un cours")
-        print("   - publier         : publier un resume")
-        print("   - consulter       : voir les resumes publics d'un cours")
-        print("   - mes_resumes     : voir vos resumes d'un cours")
-        print("   - noter           : noter un resume")
-        print("   - modifier        : modifier un de vos resumes")
-        print("   - supprimer       : supprimer un de vos resumes")
-        print("   - telecharger     : télécharger un résumé sur le disque")
-        print("   - meilleurs       : les resumes les mieux notes par cours")
-        print("   - top_cours       : le cours avec le plus de résumes")
-        print("   - moyenne         : nombre moyen de résumés par utilisateurs")
+        print("   - publier         : publier un résumé")
+        print("   - consulter       : résumés publics d'un cours")
+        print("   - mes_resumes     : vos résumés d'un cours")
+        print("   - noter           : noter un résumé")
+        print("   - modifier        : modifier un de vos résumés")
+        print("   - supprimer       : supprimer un de vos résumés")
+        print("   - telecharger     : télécharger un résumé")
+        print("   - meilleurs       : top résumés par cours")
+        print("   - top_cours       : cours avec le + de résumés")
+        print("   - moyenne         : moyenne de résumés par auteur")
         print("")
         print("  Boutique")
-        print("   - boutique        : voir et acheter des objets")
+        print("   - boutique        : catalogue et achat d'objets")
         print("   - inventaire      : voir vos objets")
-        print("   - top_objet       : voir l'objet le plus acheté")
-        print("   - activer_titre   : activer un titre possède")
-        print("   - activer_badge   : activer un badge possède")
+        print("   - top_objet       : objet le plus acheté")
+        print("   - activer_titre   : activer un titre possédé")
+        print("   - activer_badge   : activer un badge possédé")
         print("   - quitter         : quitter l'application")
     print("=" * 64)
 
-def noteMaxDeChaqueResumé() -> list[dict]:
+def get_top_rated_summaries() -> list[dict]:
     query = """
         SELECT c.Mnemonic, c.Name AS CourseName,
             s.SID, s.Title AS SummaryTitle,
@@ -698,27 +659,27 @@ def noteMaxDeChaqueResumé() -> list[dict]:
                 AND avg_notes.AverageNote = course_max.max_avg 
         ORDER BY c.Mnemonic
     """
-    return executer_select(query)
+    return execute_select(query)
 
-def coursAvecPlusDeResumes() ->list[dict]:
+def get_top_course() -> dict | None:
     query = """
         SELECT Course, COUNT(*) as nb_resumes
         FROM Summary
         GROUP BY Course
         ORDER BY nb_resumes DESC LIMIT 1
     """
-    return executer_select(query)
+    return execute_select_one(query)
 
-def moyenneResumeParUtilisateur() -> list[dict]:
+def get_average_summary_per_user() -> dict | None:
     query = """
-        SELECT AVG(nb_resumes)
+        SELECT AVG(nb_resumes) as avg_summaries
         FROM (SELECT AuthorID, COUNT(*) as nb_resumes
               FROM Summary
               GROUP BY AuthorID) as resume_par_user
     """
-    return executer_select(query)
+    return execute_select_one(query)
 
-def objetCosmetiqueLePlusAchete() -> dict | None:
+def get_top_item() -> dict | None:
     query = """
         SELECT o.OID, o.Name, SUM(i.Quantity) as nb_achats
         FROM Inventory i
@@ -726,10 +687,10 @@ def objetCosmetiqueLePlusAchete() -> dict | None:
         GROUP BY i.OID, o.Name
         ORDER BY nb_achats DESC LIMIT 1
     """
-    return executer_select_une_ligne(query)
+    return execute_select_one(query)
 
 
-def utilisateurQuiNontJamaisPublier() -> list[dict]:
+def get_inactive_users() -> list[dict]:
     query = """
         SELECT u.UID, u.UName, u.Email, u.RegistrationDate
         FROM User u 
@@ -738,172 +699,174 @@ def utilisateurQuiNontJamaisPublier() -> list[dict]:
                           WHERE s.AuthorID = u.UID)
         ORDER BY u.UName
     """
-    return executer_select(query)
+    return execute_select(query)
 
-def plusDepenseQuePointsDispo() -> list[dict]:
+def get_high_spenders() -> list[dict]:
     query = """
         SELECT u.UID, u.UName, u.Email, u.RegistrationDate
         FROM User u
         WHERE (SELECT -SUM(t.Amount) FROM Transaction t WHERE t.UID=u.UID AND t.Amount < 0) > u.Points
     """
-    return executer_select(query)
+    return execute_select(query)
 
 def main():
-    isActive = True
+    is_active = True
     connected = 0
-    while isActive:
-        afficherCommandes(connected)
+    while is_active:
+        show_commands(connected)
         request = input("Votre commande > ").strip().lower()
         show_pause = True
 
         if request == CMD_CONNECT and connected == 0:
-            Ctype = input("inscrire ou connecter : ").strip().lower()
-            if Ctype == CMD_REGISTER:
-                eMail = input("Email : ")
-                userName = input("Utilisateur : ")
-                PassWord = input("Mot de passe : ")
-                CurrentUser = register(userName, PassWord, eMail)
-                if CurrentUser != None:
+            auth_choice = input("inscrire ou connecter : ").strip().lower()
+            if auth_choice == CMD_REGISTER:
+                email = input("Email : ")
+                username = input("Utilisateur : ")
+                password = input("Mot de passe : ")
+                current_user = register(username, password, email)
+                if current_user != None:
                     connected = 1
-            elif Ctype == CMD_LOGIN:
-                userName = input("Utilisateur : ")
-                PassWord = input("Mot de passe : ")
-                CurrentUser= login(userName, PassWord)
-                if CurrentUser != None:
+            elif auth_choice == CMD_LOGIN:
+                username = input("Utilisateur : ")
+                password = input("Mot de passe : ")
+                current_user = login(username, password)
+                if current_user != None:
                     connected = 1
         elif request == CMD_LIST_COURSES and connected == 1:
-            print_structured_list(getListCours(), "Liste des cours")
+            print_structured_list(get_list_courses(), "Liste des cours")
         elif request == CMD_ADD_COURSE and connected == 1:
-            newMnemonic = input("Mnemonic : ").strip().upper()
-            newName = input("Name : ")
-            faculty = input("Faculty : ")
-            newCredit = int(input("Credits : "))
-            ajoutCours(newMnemonic,newName,faculty,newCredit)
+            mnemonic = input("Mnémonique : ").strip().upper()
+            name = input("Nom : ")
+            faculty = input("Faculté : ")
+            credit = int(input("Crédits : "))
+            add_course(mnemonic, name, faculty, credit)
         elif request == CMD_PROFIL and connected == 1:
-            print(f"\n{CurrentUser}")
-            active_badge = consulterBadgeActif(CurrentUser.getId())
+            print(f"\n{current_user}")
+            active_badge = get_active_badge(current_user.get_id())
             if active_badge:
                 print(f"Badge actif: {active_badge['Symbol']} {active_badge['Name']}")
             else:
                 print("Badge actif: Aucun")
         elif request == CMD_PUBLISH and connected == 1:
-            newMnemonic = input("Mnemonic : ").strip().upper()
-            if not getCourseByMnemonic(newMnemonic):
-                print(f"Le cours '{newMnemonic}' n'existe pas dans la table Course.")
+            mnemonic = input("Mnémonique : ").strip().upper()
+            if not get_course_by_mnemonic(mnemonic):
+                print(f"Le cours '{mnemonic}' n'existe pas dans la table Course.")
                 continue
-            newTitle = input("Title : ")
-            newDesc = input("Desc : ")
-            newVisibility = input("Visibilité (default = private) :")
-            if (newVisibility == ""):
-                newVisibility = "private"
-            filePath = input("Entrez le chemin du fichier :")
-            publierResumer(CurrentUser.getId(),newMnemonic,newTitle,newDesc, filePath, newVisibility)
-            CurrentUser.reload_user()
+            title = input("Titre : ")
+            desc = input("Description : ")
+            visibility = input("Visibilité (public, restricted, par défaut = private) : ")
+            if (visibility == ""):
+                visibility = "private"
+            file_path = input("Entrez le chemin du fichier : ")
+            if publish_summary(current_user.get_id(), mnemonic, title, desc, file_path, visibility):
+                current_user.reload_user()
+                print("Résumé publié !")
+            else:
+                print("Échec de la publication")
         elif request == CMD_VIEW_COURSE_SUMMARIES and connected == 1:
-            mnemonic = input("Quel cours voulez voir les résumés ? : ").strip().upper()
-            print_structured_list(consulterResumé(mnemonic), f"Resumes du cours {mnemonic}")
+            mnemonic = input("Mnémonique du cours : ").strip().upper()
+            print_structured_list(get_course_summaries(mnemonic), f"Résumés du cours {mnemonic}")
         elif request == CMD_MY_SUMMARIES and connected == 1:
-            mnemonic = input("Quel cours voulez voir les résumés ? : ").strip().upper()
-            print_structured_list(consulterResumé(mnemonic,CurrentUser.getId()), f"Mes resumes du cours {mnemonic}")
+            mnemonic = input("Mnémonique du cours : ").strip().upper()
+            print_structured_list(get_course_summaries(mnemonic,current_user.get_id()), f"Mes résumés du cours {mnemonic}")
         elif request == CMD_RATE_SUMMARY and connected == 1:
-            mnemonic = input("Quel cours voulez voir les résumés pour les noter ? : ").strip().upper()
-            list_course = consulterResumé(mnemonic)
-            print_structured_list(list_course, f"Resumes a noter ({mnemonic})")
-            sid = int(input("Quel résumé voulez vous noter ? : (entrer le SID) "))
-            print("TEST : ",sid)
-            if sid not in [int(item["SID"]) for item in list_course]:
-                print("SID invalide")
+            mnemonic = input("Mnémonique du cours : ").strip().upper()
+            list_course = get_course_summaries(mnemonic)
+            print_structured_list(list_course, f"Résumés à noter ({mnemonic})")
+            summary_id = int(input("ID du résumé que vous voulez noter : "))
+            if summary_id not in [int(item["SID"]) for item in list_course]:
+                print("Résumé invalide")
                 continue
-            note = int(input("Note : "))
-            comment = input("Comment : ")
-            publierNote(CurrentUser.getId(),sid,note,comment)
+            rate = int(input("Note : "))
+            comment = input("Commentaire : ")
+            rate_summary(current_user.get_id(), summary_id, rate, comment)
         elif request == CMD_INVENTORY and connected == 1:
-            print_structured_list(consulterInventaire(CurrentUser.getId()), "Mon inventaire")
+            print_structured_list(get_inventory(current_user.get_id()), "Mon inventaire")
         elif request == CMD_ACTIVATE_TITLE and connected == 1:
-            titles = consulterTitresPossedes(CurrentUser.getId())
+            titles = get_owned_items(current_user.get_id())
             print_structured_list(titles, "Mes titres")
             if not titles:
                 continue
-            oid = input("Quel titre activer ? (OID) : ").strip()
-            if activerTitle(CurrentUser.getId(), oid):
-                CurrentUser.reload_user()
+            item_id = input("ID du titre que vous voulez activer : ").strip()
+            if activate_title(current_user.get_id(), item_id):
+                current_user.reload_user()
         elif request == CMD_ACTIVATE_BADGE and connected == 1:
-            badges = consulterBadgesPossedes(CurrentUser.getId())
+            badges = get_owned_badges(current_user.get_id())
             print_structured_list(badges, "Mes badges")
             if not badges:
                 continue
-            oid = input("Quel badge activer ? (OID) : ").strip()
-            activerBadge(CurrentUser.getId(), oid)
+            item_id = input("ID du badge que vous voulez activer : ").strip()
+            activate_badge(current_user.get_id(), item_id)
         elif request == CMD_SHOP and connected == 1:
-            shop_items = consulterBoutique()
+            shop_items = get_shop_items()
             print_structured_list(shop_items, "Boutique")
-            choix = input("Voulez vous acheter un objet ? (o/n) : ")
-            if choix == "o":
-                oid = int(input("Quel objet voulez vous acheter ? : (entrer le OID)"))
-                if oid < 0 or oid > len(shop_items):
-                    print("OID invalide")
+            choice = input("Voulez vous acheter un objet ? (o/n) : ")
+            if choice == "o":
+                item_id = int(input("ID de l'objet que vous voulez acheter : "))
+                if item_id < 0 or item_id > len(shop_items):
+                    print("Objet invalide")
                     continue
-                if acheterObjet(CurrentUser.getId(),oid):
-                    CurrentUser.reload_user()
+                if buy_item(current_user.get_id(),item_id):
+                    current_user.reload_user()
                     print("Objet acheté avec succès !")
                 else:
                     print("Vous n'avez pas assez de points pour acheter cet objet")
             else:
                 print("Vous n'avez pas acheté d'objet")
         elif request == CMD_HISTORY and connected == 1:
-            print_structured_list(consulterHistorique(CurrentUser.getId()), "Historique")
+            print_structured_list(get_history(current_user.get_id()), "Historique")
         elif request == CMD_LEADERBOARD and connected == 1:
-            print_structured_list(consulterClassement(), "Classement Top 10")
+            print_structured_list(get_leaderboard(), "Classement Top 10")
         elif request == CMD_LIST_ACTIVE_USERS and connected == 1:
-            print_structured_list(consulterUsersMultiMatieres(), "Utilisateurs actifs (>= 3 matieres)")
+            print_structured_list(get_active_users(), "Utilisateurs actifs (>= 3 matières)")
         elif request == CMD_DOWNLOAD_SUMMARY and connected == 1:
-            sid = int(input("Quel résumé voulez-vous lire ? (entrer le SID) : "))
-            downloadPath = input("Entrez le chemin de destination (par défaut : dossier courant) : ")
-            telechargerResume(sid, CurrentUser.getId(), downloadPath)
+            summary_id = int(input("ID du résumé que vous voulez lire : "))
+            download_path = input("Entrez le chemin de destination (par défaut : dossier courant) : ")
+            download_summary(summary_id, current_user.get_id(), download_path)
         elif request == CMD_EDIT_SUMMARY and connected == 1:
-            my_summaries = consulterMesResumes(CurrentUser.getId())
-            print_structured_list(my_summaries, "Mes resumes")
+            my_summaries = get_own_summaries(current_user.get_id())
+            print_structured_list(my_summaries, "Mes résumés")
             if not my_summaries:
                 continue
-            sid = int(input("Quel résumé voulez vous modifier ? : (entrer le SID)"))
-            sid_exists = any(str(item.get("SID")) == str(sid) for item in my_summaries)
+            summary_id = int(input("ID du résumé que vous voulez modifier : "))
+            sid_exists = any(str(item.get("SID")) == str(summary_id) for item in my_summaries)
             if not sid_exists:
-                print("SID invalide")
+                print("Résumé invalide")
                 continue
-            newTitle = input("Nouveau titre : ")
-            newDesc = input("Nouvelle description : ")
-            modifierResumer(sid,CurrentUser.getId(),newTitle,newDesc)
+            new_title = input("Nouveau titre : ")
+            new_desc = input("Nouvelle description : ")
+            update_summary(summary_id,current_user.get_id(), new_title, new_desc)
         elif request == CMD_DELETE_SUMMARY and connected == 1:
-            my_summaries = consulterMesResumes(CurrentUser.getId())
-            print_structured_list(my_summaries, "Mes resumes")
+            my_summaries = get_own_summaries(current_user.get_id())
+            print_structured_list(my_summaries, "Mes résumés")
             if not my_summaries:
                 continue
-            sid = int(input("Quel résumé voulez vous supprimer ? : (entrer le SID)"))
-            sid_exists = any(str(item.get("SID")) == str(sid) for item in my_summaries)
+            summary_id = int(input("ID du résumé que vous voulez supprimer : "))
+            sid_exists = any(str(item.get("SID")) == str(summary_id) for item in my_summaries)
             if not sid_exists:
-                print("SID invalide")
+                print("Résumé invalide")
                 continue
-            supprimerResumer(sid,CurrentUser.getId())
+            delete_summary(summary_id,current_user.get_id())
         elif request == CMD_LIST_INACTIVE_USERS and connected == 1:
-            my_summaries = utilisateurQuiNontJamaisPublier()
-            print_structured_list(my_summaries, "User qui n'ont pas publié")
+            inactive_users = get_inactive_users()
+            print_structured_list(inactive_users, "Utilisateur qui n'ont pas publié")
         elif request == CMD_TOP_SUMMARIES and connected == 1:
-            my_summaries = noteMaxDeChaqueResumé()
-            print_structured_list(my_summaries, "Meilleurs resumés par cours")
+            top_summaries = get_top_rated_summaries()
+            print_structured_list(top_summaries, "Meilleurs résumés par cours")
         elif request == CMD_TOP_COURSE and connected == 1:
-            my_summaries = coursAvecPlusDeResumes()
-            print_structured_list(my_summaries, "Cours avec le plus de résumés")
+            top_course = get_top_course()
+            print_structured_list(top_course, "Cours avec le plus de résumés")
         elif request == CMD_AVG_SUMMARIES_PER_USER and connected == 1:
-            my_summaries = moyenneResumeParUtilisateur()
-            print_structured_list(my_summaries, "Nombre moyen de résumés publiés par utilisateur")
+            avg_result = get_average_summary_per_user()
+            print_structured_list(avg_result, "Nombre moyen de résumés publiés par utilisateur")
         elif request == CMD_TOP_ITEM and connected == 1:
-            my_summaries = objetCosmetiqueLePlusAchete()
-            print_structured_list(my_summaries, "Objet cosmétique le plus acheté")
+            top_item = get_top_item()
+            print_structured_list(top_item, "Objet cosmétique le plus acheté")
         elif request == CMD_HIGH_SPENDERS and connected == 1:
-            my_summaries = plusDepenseQuePointsDispo()
-            print_structured_list(my_summaries, "Utilisateurs ayant plus dépensé de points qu'ils en ont disponibles")
+            high_spenders = get_high_spenders()
+            print_structured_list(high_spenders, "Utilisateurs ayant dépenses > solde actuel")
         elif request == CMD_EXIT:
-            isActive = False
+            is_active = False
             show_pause = False
             connection.close()
             print("Au revoir !")
@@ -913,7 +876,7 @@ def main():
         else:
             print("Aucune commande n'a été spécifiée")
             show_pause = False
-        if isActive and show_pause:
+        if is_active and show_pause:
             input("\nAppuyez sur Entrée pour continuer...")
 
 if __name__ == "__main__":
