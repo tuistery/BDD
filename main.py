@@ -1,6 +1,6 @@
 import os
 
-from db import *
+from config import *
 from helpers import *
 from users import *
 from courses import *
@@ -116,7 +116,7 @@ def main():
             print_structured_list(list_course, f"Résumés à noter ({mnemonic})")
             summary_id = int(input("ID du résumé que vous voulez noter : "))
             if summary_id not in [int(item["SID"]) for item in list_course]:
-                print("❌ Résumé invalide.")
+                print("Résumé invalide.")
                 continue
             rate = int(input("Note : "))
             comment = input("Commentaire : ")

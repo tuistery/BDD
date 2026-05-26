@@ -1,6 +1,6 @@
 import mysql.connector
 
-from db import connection, ACTION_BUY_TITLE
+from config import connection, ACTION_BUY_TITLE
 from helpers import execute_select, execute_select_one
 from users import add_points
 

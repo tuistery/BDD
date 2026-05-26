@@ -1,8 +1,8 @@
 import mysql.connector
-from db import connection
+from config import connection
 
 
-def print_structured_list(items, title="Résultats"):
+def print_structured_list(items, title="Résultats") -> None:
     """Affiche proprement une liste de dictionnaires sous forme de tableau."""
     print(f"\n=== {title} ===")
 
@@ -44,7 +44,7 @@ def print_structured_list(items, title="Résultats"):
         print(line)
 
 
-def get_next_id(table, column):
+def get_next_id(table, column) -> int:
     cursor = connection.cursor()
     query = f"SELECT COALESCE(MAX({column}), 0) + 1 FROM {table}"
     cursor.execute(query)
@@ -53,7 +53,7 @@ def get_next_id(table, column):
     return result[0]
 
 
-def execute_select(query: str, params: tuple = None) -> list[dict]:
+def execute_select(query: str, params: tuple=None) -> list[dict]:
     if not connection.is_connected():
         return []
     cursor = connection.cursor(dictionary=True)
@@ -67,7 +67,7 @@ def execute_select(query: str, params: tuple = None) -> list[dict]:
         cursor.close()
 
 
-def execute_select_one(query: str, params: tuple = None) -> dict | None:
+def execute_select_one(query: str, params: tuple=None) -> dict | None:
     if not connection.is_connected():
         return None
     cursor = connection.cursor(dictionary=True)
@@ -81,7 +81,7 @@ def execute_select_one(query: str, params: tuple = None) -> dict | None:
         cursor.close()
 
 
-def execute_write(query: str, params: tuple = None) -> int:
+def execute_write(query: str, params: tuple=None) -> int:
     if not connection.is_connected():
         return -1
     cursor = connection.cursor(dictionary=True)

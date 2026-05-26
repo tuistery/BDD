@@ -2,7 +2,7 @@ import mysql.connector
 import os
 from datetime import date, datetime
 
-from db import connection, ACTION_PUBLISH_SUMMARY, ACTION_RATE_SUMMARY
+from config import connection, ACTION_PUBLISH_SUMMARY, ACTION_RATE_SUMMARY
 from helpers import execute_select, execute_select_one, execute_write, get_next_id
 from users import add_points
 

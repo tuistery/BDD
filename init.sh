@@ -76,13 +76,13 @@ echo "Base de données initialisée avec succès."
 echo -e "\nExécution des scripts Python..."
 
 # On s'assure que les fichiers Python existent avant de les lancer
-if [ ! -f "Parsing.py" ] || [ ! -f "main.py" ]; then
-    echo "Erreur : 'Parsing.py' ou 'main.py' manquant."
+if [ ! -f "parsing.py" ] || [ ! -f "main.py" ]; then
+    echo "Erreur : 'parsing.py' ou 'main.py' manquant."
     exit 1
 fi
 
-echo "  Lancement de Parsing.py..."
-python3 Parsing.py "$username" "$password"
+echo "  Lancement de parsing.py..."
+python3 parsing.py "$username" "$password"
 
 echo "  Lancement de main.py..."
 # Correction ici : utilisation constante de 'python3' pour éviter les conflits hors du venv
