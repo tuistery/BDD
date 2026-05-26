@@ -129,6 +129,7 @@ def main():
                     print("Veuillez entrer un mnémonique.")
                     continue
                 if entry.lower() == "annuler":
+                    mnemonic = None
                     show_pause = False
                     break
                 mnemonic = entry.upper()
@@ -146,6 +147,7 @@ def main():
                     print("Veuillez entrer un mnémonique.")
                     continue
                 if entry.lower() == "annuler":
+                    mnemonic = None
                     show_pause = False
                     break
                 mnemonic = entry.upper()
