@@ -1,5 +1,5 @@
 import bcrypt
-from datetime import date
+from datetime import date, datetime
 
 from config import ACTION_REGISTER
 from helpers import execute_select, execute_select_one, execute_write, get_next_id
@@ -17,7 +17,7 @@ def get_amount(desc: str) -> int:
 def add_transaction(action_type: str, user_id: int, custom_amount: int=None) -> None:
     query = "INSERT INTO Transaction (TID,Description,UID,Amount,Date) VALUES (%s,%s,%s,%s,%s)"
     amount = custom_amount if custom_amount is not None else get_amount(action_type)
-    params = (get_next_id("Transaction", "TID"), action_type, user_id, amount, date.today())
+    params = (get_next_id("Transaction", "TID"), action_type, user_id, amount, datetime.now())
     if execute_write(query, params) != -1:
         print(f"Ajout de la transaction de l'utilisateur {user_id} avec succès !")
 
@@ -62,7 +62,7 @@ def login(username: str, password: str) -> DataUser | None:
     query = "SELECT * FROM User WHERE UName = %s"
     result = execute_select_one(query, (username,)) # Le tuple (valeur,) est important
     if result and bcrypt.checkpw(password, result["Pass"].encode('utf-8')):
-        print("Connexion réalisée avec succès")
+        print("Connexion réalisée avec succès !")
         return DataUser(
             result["UName"],
             result["Pass"],
