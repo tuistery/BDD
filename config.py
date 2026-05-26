@@ -1,13 +1,22 @@
 import mysql.connector
 import sys
+from getpass import getpass
 
 # Connexion globale
+if len(sys.argv) >= 3 :
+    user = sys.argv[1]
+    password = sys.argv[2]
+else :
+    user = input("Nom d'utilisateur MariaDB [root] : ") or "root"
+    password = getpass("Mot de passe : ")
+
 connection = mysql.connector.connect(
     host='localhost',
     database='ProjetBdd',
-    user=sys.argv[1],
-    password=sys.argv[2]
+    user=user,
+    password=password
 )
+print("Connexion réussie à la base de données")
 
 # Constantes pour le menu
 CMD_EXIT = "quitter"
