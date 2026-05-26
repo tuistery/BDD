@@ -86,7 +86,6 @@ def main():
         show_commands(connected)
         request = input("Votre commande > ").strip().lower()
         show_pause = True
-
         if request == CMD_LIST_COURSES and connected == 1:
             print_structured_list(get_list_courses(), "Liste des cours")
         elif request == CMD_ADD_COURSE and connected == 1:
@@ -96,8 +95,16 @@ def main():
                     print("Le mnémonique ne peut contenir que des lettres et des chiffres.")
                 else:
                     break
-            name = input("Nom : ")
-            faculty = input("Faculté : ")
+            while True:
+                name = input("Nom : ").strip()
+                if name:
+                    break
+                print("Le nom ne peut pas être vide.")
+            while True:
+                faculty = input("Faculté : ").strip()
+                if faculty:
+                    break
+                print("La faculté ne peut pas être vide")
             while True:
                 try:
                     credits = int(input("Crédits : "))
@@ -110,11 +117,13 @@ def main():
             add_course(mnemonic, name, faculty, credits)
         elif request == CMD_PROFIL and connected == 1:
             print(f"\n{current_user}")
-            active_badge = get_active_badge(current_user.get_id())
-            if active_badge:
-                print(f"Badge actif: {active_badge['Name']}")
+            active_badges = get_active_badges(current_user.get_id())
+            if active_badges:
+                print(f"Badges actifs: ")
+                for badge in active_badges:
+                    print(f"  - {badge['Name']}")
             else:
-                print("Badge actif: Aucun")
+                print("Badges actifs: Aucun")
         elif request == CMD_PUBLISH and connected == 1:
             mnemonic = None
             while True:
@@ -129,8 +138,16 @@ def main():
                 print(f"Le cours '{entry}' n'existe pas dans la table 'Course', réessayez.")
                 print("Tapez 'annuler' pour revenir.")
             if mnemonic:
-                title = input("Titre : ")
-                desc = input("Description : ")
+                while True:
+                    title = input("Titre : ").strip()
+                    if title:
+                        break
+                    print("Le titre ne peut pas être vide.")
+                while True:
+                    desc = input("Description : ").strip()
+                    if desc:
+                        break
+                    print("La description ne peut pas être vide.")
                 while True:
                     visibility = input("Visibilité (public, restricted, par défaut = private) : ")
                     if visibility == "":
@@ -184,7 +201,11 @@ def main():
                             print("Note invalide. Entrez un nombre entre 0 et 5.")
                         except ValueError:
                             print("Veuillez entrer un nombre entier.")
-                    comment = input("Commentaire : ")
+                    while True:
+                        comment = input("Commentaire : ")
+                        if comment.strip():
+                            break
+                        print("Le commentaire ne peut pas être vide")
                     rate_summary(current_user.get_id(), summary_id, rate, comment)
         elif request == CMD_INVENTORY and connected == 1:
             print_structured_list(get_inventory(current_user.get_id()), "Mon inventaire")

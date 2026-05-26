@@ -34,16 +34,15 @@ def get_owned_badges(user_id: int) -> list[dict]:
     """
     return execute_select(query, (user_id,))
 
-def get_active_badge(user_id: int) -> dict | None:
+def get_active_badges(user_id: int) -> list[dict]:
     query = """
         SELECT o.Name
         FROM Inventory i
         JOIN Badge b ON b.OID = i.OID
         JOIN Object o ON o.OID = i.OID
         WHERE i.OwnerID = %s AND i.isActive = TRUE
-        LIMIT 1
     """
-    return execute_select_one(query, (user_id,))
+    return execute_select(query, (user_id,))
 
 def buy_item(user_id: int, object_id: int) -> bool:
     if not connection.is_connected():
@@ -164,15 +163,6 @@ def activate_badge(user_id: int, object_id: int) -> bool:
             print("Ce badge n'est pas dans votre inventaire.")
             return False
 
-        cursor.execute(
-            """
-            UPDATE Inventory i
-            JOIN Badge b ON b.OID = i.OID
-            SET i.isActive = FALSE
-            WHERE i.OwnerID = %s
-            """,
-            (user_id,)
-        )
         cursor.execute(
             "UPDATE Inventory SET isActive = TRUE WHERE OwnerID = %s AND OID = %s",
             (user_id, object_id)

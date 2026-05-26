@@ -43,7 +43,7 @@ class DataUser:
             LIMIT 1;
         """
         result = execute_select_one(query, (self.xp,))
-        level = result["RankLevel"] if result else 0
+        level = result["RankLevel"] if result else 1
         return f"Utilisateur: {self.username} | Points: {self.points} | Titre: {self.title} | XP: {self.xp} | Niveau: {level}"
 
     def __repr__(self):
