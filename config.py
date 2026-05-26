@@ -40,6 +40,8 @@ CMD_ACTIVATE_TITLE = "activer_titre"
 CMD_ACTIVATE_BADGE = "activer_badge"
 CMD_HIGH_SPENDERS = "gros_depensiers"
 
+CMD_DECONNECTION = "deconnexion"
+
 # Libellés d'actions (doivent correspondre exactement à la table Action)
 ACTION_PUBLISH_SUMMARY = "Publication d'un résumé"
 ACTION_RATE_SUMMARY = "Évaluation d'un résumé"

@@ -48,6 +48,7 @@ def show_commands(connected: int) -> None:
         print("   - top_objet       : objet le plus acheté")
         print("   - activer_titre   : activer un titre possédé")
         print("   - activer_badge   : activer un badge possédé")
+        print("   - deconnexion     : se déconnecter")
         print("   - quitter         : quitter l'application")
     print("=" * 64)
 
@@ -232,6 +233,10 @@ def main():
         elif request == CMD_HIGH_SPENDERS and connected == 1:
             high_spenders = get_high_spenders()
             print_structured_list(high_spenders, "Utilisateurs ayant dépenses > solde actuel")
+        elif request == CMD_DECONNECTION:
+            current_user = None
+            connected = 0
+            print("Déconnecté avec succès")
         elif request == CMD_EXIT:
             is_active = False
             show_pause = False
