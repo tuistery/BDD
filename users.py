@@ -13,14 +13,12 @@ def get_amount(desc: str) -> int:
         return result["CoinGain"]
     return 0
 
-
 def add_transaction(action_type: str, user_id: int, custom_amount: int=None) -> None:
     query = "INSERT INTO Transaction (TID,Description,UID,Amount,Date) VALUES (%s,%s,%s,%s,%s)"
     amount = custom_amount if custom_amount is not None else get_amount(action_type)
     params = (get_next_id("Transaction", "TID"), action_type, user_id, amount, datetime.now())
     if execute_write(query, params) != -1:
         print(f"Ajout de la transaction de l'utilisateur {user_id} avec succès !")
-
 
 def add_points(action_type: str, user_id: int, custom_amount: int=None) -> None:
     query = """
@@ -33,7 +31,6 @@ def add_points(action_type: str, user_id: int, custom_amount: int=None) -> None:
     if execute_write(query, params) != -1:
         print(f"Ajout des points et de l'XP à l'utilisateur {user_id} avec succès !")
         add_transaction(action_type, user_id, custom_amount)
-
 
 def register(username: str, password: str, email: str) -> DataUser | None:
     already_exists = execute_select_one(
@@ -49,13 +46,12 @@ def register(username: str, password: str, email: str) -> DataUser | None:
     hashed = bcrypt.hashpw(password, salt)
     new_user = DataUser(username, hashed, email, date.today())
     query = "INSERT INTO User (UID, UName, Pass, Email, RegistrationDate, Points, Xp, Title) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-    params = (new_user.get_id(), new_user.get_username(), new_user.password, new_user.get_email(), new_user.date_, new_user.get_points(), new_user.get_xp(), new_user.get_title())
+    params = (new_user.get_id(), new_user.get_username(), new_user.password, new_user.get_email(), new_user.date, new_user.get_points(), new_user.get_xp(), new_user.get_title())
     if execute_write(query, params) != -1:
         add_points(ACTION_REGISTER, new_user.get_id())
         new_user.reload_user()
         return new_user
     return None
-
 
 def login(username: str, password: str) -> DataUser | None:
     password = password.encode('utf-8')
@@ -77,7 +73,6 @@ def login(username: str, password: str) -> DataUser | None:
         print("Identifiant ou mot de passe incorrect.")
         return None
 
-
 def get_leaderboard() -> list[dict]:
     query = """
         SELECT UName, Points, Xp, Title
@@ -91,7 +86,6 @@ def get_leaderboard() -> list[dict]:
             row["Rang"] = idx
     return leaderboard
 
-
 def get_active_users() -> list[dict]:
     query = """
         SELECT UName
@@ -104,7 +98,6 @@ def get_active_users() -> list[dict]:
     """
     return execute_select(query)
 
-
 def get_inactive_users() -> list[dict]:
     query = """
         SELECT u.UID, u.UName, u.Email, u.RegistrationDate
@@ -116,7 +109,6 @@ def get_inactive_users() -> list[dict]:
     """
     return execute_select(query)
 
-
 def get_high_spenders() -> list[dict]:
     query = """
         SELECT u.UID, u.UName, u.Email, u.RegistrationDate
@@ -124,7 +116,6 @@ def get_high_spenders() -> list[dict]:
         WHERE (SELECT -SUM(t.Amount) FROM Transaction t WHERE t.UID=u.UID AND t.Amount < 0) > u.Points
     """
     return execute_select(query)
-
 
 def get_history(user_id: int) -> list[dict]:
     query = """

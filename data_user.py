@@ -1,8 +1,10 @@
+from datetime import date
+
 from helpers import execute_select_one, get_next_id
 
 
 class DataUser:
-    def __init__(self, username: str, password: str, email: str, date_="2026-04-03", points=0, xp=0, title="Null", user_id=-1):
+    def __init__(self, username: str, password: str, email: str, registration_date=None, points=0, xp=0, title="Null", user_id=-1):
         if user_id == -1:
             self.user_id = get_next_id("User", "UID")
         else:
@@ -11,7 +13,7 @@ class DataUser:
         self.username = username
         self.email = email
         self.password = password
-        self.date_ = date_
+        self.date = registration_date if registration_date is not None else date.today()
         self.points = points
         self.xp = xp
         self.title = title
@@ -22,13 +24,6 @@ class DataUser:
     def get_xp(self): return self.xp
     def get_title(self) -> str: return self.title
     def get_id(self) -> int: return self.user_id
-
-    def display_info(self):
-        """Affiche les informations principales de l'utilisateur"""
-        print(f"Utilisateur: {self.username}")
-        print(f"Points: {self.points}")
-        print(f"Titre: {self.title}")
-        print(f"XP: {self.xp}")
 
     def reload_user(self) -> None:
         query = "SELECT Points, Xp, Title FROM User WHERE UID = %s"
@@ -47,7 +42,8 @@ class DataUser:
             ORDER BY XpRequired DESC
             LIMIT 1;
         """
-        level = execute_select_one(query, (self.xp,))["RankLevel"]
+        result = execute_select_one(query, (self.xp,))
+        level = result["RankLevel"] if result else 0
         return f"Utilisateur: {self.username} | Points: {self.points} | Titre: {self.title} | XP: {self.xp} | Niveau: {level}"
 
     def __repr__(self):

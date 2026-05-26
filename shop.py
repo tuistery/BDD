@@ -9,11 +9,9 @@ def get_shop_items() -> list[dict]:
     query = "SELECT * FROM Object"
     return execute_select(query)
 
-
 def get_inventory(user_id: int) -> list[dict]:
     query = "SELECT * FROM Inventory WHERE OwnerID = %s"
     return execute_select(query, (user_id,))
-
 
 def get_owned_items(user_id: int) -> list[dict]:
     query = """
@@ -25,10 +23,9 @@ def get_owned_items(user_id: int) -> list[dict]:
     """
     return execute_select(query, (user_id,))
 
-
 def get_owned_badges(user_id: int) -> list[dict]:
     query = """
-        SELECT i.OID, b.Symbol, o.Name, i.isActive
+        SELECT i.OID, o.Name, i.isActive
         FROM Inventory i
         JOIN Badge b ON b.OID = i.OID
         JOIN Object o ON o.OID = i.OID
@@ -37,10 +34,9 @@ def get_owned_badges(user_id: int) -> list[dict]:
     """
     return execute_select(query, (user_id,))
 
-
 def get_active_badge(user_id: int) -> dict | None:
     query = """
-        SELECT b.Symbol, o.Name
+        SELECT o.Name
         FROM Inventory i
         JOIN Badge b ON b.OID = i.OID
         JOIN Object o ON o.OID = i.OID
@@ -48,7 +44,6 @@ def get_active_badge(user_id: int) -> dict | None:
         LIMIT 1
     """
     return execute_select_one(query, (user_id,))
-
 
 def buy_item(user_id: int, object_id: int) -> bool:
     if not connection.is_connected():
@@ -101,7 +96,6 @@ def buy_item(user_id: int, object_id: int) -> bool:
     finally:
         cursor.close()
 
-
 def activate_title(user_id: int, object_id: int) -> bool:
     if not connection.is_connected():
         return False
@@ -149,7 +143,6 @@ def activate_title(user_id: int, object_id: int) -> bool:
     finally:
         cursor.close()
 
-
 def activate_badge(user_id: int, object_id: int) -> bool:
     if not connection.is_connected():
         return False
@@ -185,7 +178,7 @@ def activate_badge(user_id: int, object_id: int) -> bool:
             (user_id, object_id)
         )
         connection.commit()
-        print(f"Badge activé : {badge_row['Symbol']} {badge_row['Name']}")
+        print(f"Badge activé : {badge_row['Name']}")
         return True
     except mysql.connector.Error as err:
         connection.rollback()
@@ -193,7 +186,6 @@ def activate_badge(user_id: int, object_id: int) -> bool:
         return False
     finally:
         cursor.close()
-
 
 def get_top_item() -> dict | None:
     query = """

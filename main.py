@@ -9,6 +9,30 @@ from summaries import *
 from shop import *
 
 
+def ask_mnemonic() -> str | None:
+    while True:
+        entry = input("Mnémonique du cours : ").strip()
+        if not entry:
+            print("Veuillez entrer un mnémonique.")
+            continue
+        if entry.lower() == "annuler":
+            return None
+        mnemonic = entry.upper()
+        if get_course_by_mnemonic(mnemonic):
+            return mnemonic
+        print(f"Le cours '{entry}' n'existe pas. Réessayer.")
+        print("Tapez 'annuler' pour revenir.")
+
+def ask_id_from_list(items: list[dict], key: str, prompt: str) -> int:
+    while True:
+        try:
+            item_id = int(input(prompt))
+            if item_id in [int(item[key]) for item in items]:
+                return item_id
+            print("ID invalide. Réessayez.")
+        except ValueError:
+            print("Veuillez entrer un nombre entier.")
+
 def show_commands(connected: int) -> None:
     os.system('clear')
     print("\n" + "=" * 64)
@@ -48,6 +72,8 @@ def show_commands(connected: int) -> None:
         print("   - top_objet       : objet le plus acheté")
         print("   - activer_titre   : activer un titre possédé")
         print("   - activer_badge   : activer un badge possédé")
+        print("")
+        print("  Session")
         print("   - deconnexion     : se déconnecter")
         print("   - quitter         : quitter l'application")
     print("=" * 64)
@@ -64,21 +90,29 @@ def main():
         if request == CMD_LIST_COURSES and connected == 1:
             print_structured_list(get_list_courses(), "Liste des cours")
         elif request == CMD_ADD_COURSE and connected == 1:
-            mnemonic = input("Mnémonique : ").strip().upper()
+            while True:
+                mnemonic = input("Mnémonique : ").strip().upper()
+                if not mnemonic.isalnum():
+                    print("Le mnémonique ne peut contenir que des lettres et des chiffres.")
+                else:
+                    break
             name = input("Nom : ")
             faculty = input("Faculté : ")
             while True:
                 try:
-                    credit = int(input("Crédits : "))
-                    break
+                    credits = int(input("Crédits : "))
+                    if credits <= 0:
+                        print("Le nombre de crédits doit être supérieur à 0.")
+                    else:
+                        break
                 except ValueError:
                     print("Veuillez entrer un nombre entier.")
-            add_course(mnemonic, name, faculty, credit)
+            add_course(mnemonic, name, faculty, credits)
         elif request == CMD_PROFIL and connected == 1:
             print(f"\n{current_user}")
             active_badge = get_active_badge(current_user.get_id())
             if active_badge:
-                print(f"Badge actif: {active_badge['Symbol']} {active_badge['Name']}")
+                print(f"Badge actif: {active_badge['Name']}")
             else:
                 print("Badge actif: Aucun")
         elif request == CMD_PUBLISH and connected == 1:
@@ -92,7 +126,7 @@ def main():
                 mnemonic = entry.upper()
                 if get_course_by_mnemonic(entry):
                     break
-                print(f"Le cours '{entry}' n'existe pas dans la table Course, réessayez.")
+                print(f"Le cours '{entry}' n'existe pas dans la table 'Course', réessayez.")
                 print("Tapez 'annuler' pour revenir.")
             if mnemonic:
                 title = input("Titre : ")
@@ -122,69 +156,26 @@ def main():
                     else:
                         print("Échec de la publication.")
         elif request == CMD_VIEW_COURSE_SUMMARIES and connected == 1:
-            mnemonic = None
-            while True:
-                entry = input("Mnémonique du cours : ").strip()
-                if not entry:
-                    print("Veuillez entrer un mnémonique.")
-                    continue
-                if entry.lower() == "annuler":
-                    mnemonic = None
-                    show_pause = False
-                    break
-                mnemonic = entry.upper()
-                if get_course_by_mnemonic(mnemonic):
-                    break
-                print(f"Le cours '{entry}' n'existe pas. Réessayer.")
-                print("Tapez 'annuler' pour revenir.")
-            if mnemonic:
+            mnemonic = ask_mnemonic()
+            if mnemonic is None:
+                show_pause = False
+            else: 
                 print_structured_list(get_course_summaries(mnemonic), f"Résumés du cours {mnemonic}")
         elif request == CMD_MY_SUMMARIES and connected == 1:
-            mnemonic = None
-            while True:
-                entry = input("Mnémonique du cours : ").strip()
-                if not entry:
-                    print("Veuillez entrer un mnémonique.")
-                    continue
-                if entry.lower() == "annuler":
-                    mnemonic = None
-                    show_pause = False
-                    break
-                mnemonic = entry.upper()
-                if get_course_by_mnemonic(mnemonic):
-                    break
-                print(f"Le cours '{entry}' n'existe pas. Réessayer.")
-                print("Tapez 'annuler' pour revenir.")
-            if mnemonic:
+            mnemonic = ask_mnemonic()
+            if mnemonic is None:
+                show_pause = False
+            else:
                 print_structured_list(get_course_summaries(mnemonic, current_user.get_id()), f"Mes résumés du cours {mnemonic}")
         elif request == CMD_RATE_SUMMARY and connected == 1:
-            mnemonic = None
-            while True:
-                entry = input("Mnémonique du cours : ").strip()
-                if not entry:
-                    print("Veuillez entrer un mnémonique.")
-                    continue
-                if entry.lower() == "annuler":
-                    mnemonic = None
-                    show_pause = False
-                    break
-                mnemonic = entry.upper()
-                if get_course_by_mnemonic(mnemonic):
-                    break
-                print(f"Le cours '{entry}' n'existe pas. Réessayer.")
-                print("Tapez 'annuler' pour revenir.")
-            if mnemonic:
+            mnemonic = ask_mnemonic()
+            if mnemonic is None:
+                show_pause = False
+            else:
                 list_course = get_course_summaries(mnemonic)
                 print_structured_list(list_course, f"Résumés à noter ({mnemonic})")
                 if list_course:
-                    while True:
-                        try:
-                            summary_id = int(input("ID du résumé que vous voulez noter : "))
-                            if summary_id in [int(item["SID"]) for item in list_course]:
-                                break
-                            print("ID invalide. Réessayez.")
-                        except ValueError:
-                            print("Veuillez entrer un nombre entier.")
+                    summary_id = ask_id_from_list(list_course, "SID", "ID du résumé que vous voulez noter : ")
                     while True:
                         try:
                             rate = int(input("Note (0-5) : "))
@@ -201,31 +192,34 @@ def main():
             titles = get_owned_items(current_user.get_id())
             print_structured_list(titles, "Mes titres")
             if titles:
-                item_id = input("ID du titre que vous voulez activer : ").strip()
+                item_id = ask_id_from_list(titles, "OID", "ID du titre que vous voulez activer : ")
                 if activate_title(current_user.get_id(), item_id):
                     current_user.reload_user()
         elif request == CMD_ACTIVATE_BADGE and connected == 1:
             badges = get_owned_badges(current_user.get_id())
             print_structured_list(badges, "Mes badges")
             if badges:
-                item_id = input("ID du badge que vous voulez activer : ").strip()
-                activate_badge(current_user.get_id(), item_id)
+                item_id = ask_id_from_list(badges, "OID", "ID du badge que vous voulez activer : ")
+                if activate_badge(current_user.get_id(), item_id):
+                    current_user.reload_user()
         elif request == CMD_SHOP and connected == 1:
             shop_items = get_shop_items()
             print_structured_list(shop_items, "Boutique")
-            choice = input("Voulez vous acheter un objet ? (o/n) : ")
-            if choice == "o":
-                item_id = int(input("ID de l'objet que vous voulez acheter : "))
-                if item_id < 0 or item_id > len(shop_items):
-                    print("Objet invalide")
-                else:
+            while True:
+                choice = input("Voulez vous acheter un objet ? (o/n) : ")
+                if choice == "o":
+                    item_id = ask_id_from_list(shop_items, "OID", "ID de l'objet que vous voulez acheter : ")
                     if buy_item(current_user.get_id(), item_id):
                         current_user.reload_user()
                         print("Objet acheté avec succès !")
                     else:
                         print("Vous n'avez pas assez de points pour acheter cet objet.")
-            else:
-                print("Vous n'avez pas acheté d'objet")
+                    break
+                elif choice == "n":
+                    print("Vous n'avez pas acheté d'objet.")
+                    break
+                else:
+                    print("Réponse invalide. Entrez 'o' ou 'n'.")
         elif request == CMD_HISTORY and connected == 1:
             print_structured_list(get_history(current_user.get_id()), "Historique")
         elif request == CMD_LEADERBOARD and connected == 1:
@@ -233,31 +227,32 @@ def main():
         elif request == CMD_LIST_ACTIVE_USERS and connected == 1:
             print_structured_list(get_active_users(), "Utilisateurs actifs (>= 3 matières)")
         elif request == CMD_DOWNLOAD_SUMMARY and connected == 1:
-            summary_id = int(input("ID du résumé que vous voulez lire : "))
-            download_path = input("Entrez le chemin de destination (par défaut : dossier courant) : ")
-            download_summary(summary_id, current_user.get_id(), download_path)
+            while True:
+                try:
+                    summary_id = int(input("ID du résumé que vous voulez télécharger : "))
+                    break
+                except ValueError:
+                    print("Veuillez entrer un nombre entier.")
+            exists = execute_select_one("SELECT SID FROM Summary WHERE SID = %s", (summary_id,))
+            if not exists:
+                print("Ce résumé n'existe pas.")
+            else:
+                download_path = input("Entrez le chemin de destination (par défaut : dossier courant) : ")
+                download_summary(summary_id, current_user.get_id(), download_path)
         elif request == CMD_EDIT_SUMMARY and connected == 1:
             my_summaries = get_own_summaries(current_user.get_id())
             print_structured_list(my_summaries, "Mes résumés")
             if my_summaries:
-                summary_id = int(input("ID du résumé que vous voulez modifier : "))
-                sid_exists = any(str(item.get("SID")) == str(summary_id) for item in my_summaries)
-                if not sid_exists:
-                    print("Résumé invalide")
-                else:
-                    new_title = input("Nouveau titre : ")
-                    new_desc = input("Nouvelle description : ")
-                    update_summary(summary_id, current_user.get_id(), new_title, new_desc)
+                summary_id = ask_id_from_list(my_summaries, "SID", "ID du résumé que vous voulez modifier : ")
+                new_title = input("Nouveau titre : ")
+                new_desc = input("Nouvelle description : ")
+                update_summary(summary_id, current_user.get_id(), new_title, new_desc)
         elif request == CMD_DELETE_SUMMARY and connected == 1:
             my_summaries = get_own_summaries(current_user.get_id())
             print_structured_list(my_summaries, "Mes résumés")
             if my_summaries:
-                summary_id = int(input("ID du résumé que vous voulez supprimer : "))
-                sid_exists = any(str(item.get("SID")) == str(summary_id) for item in my_summaries)
-                if not sid_exists:
-                    print("Résumé invalide")
-                else:
-                    delete_summary(summary_id, current_user.get_id())
+                summary_id = ask_id_from_list(my_summaries, "SID", "ID du résumé que vous voulez supprimer : ")
+                delete_summary(summary_id, current_user.get_id())
         elif request == CMD_LIST_INACTIVE_USERS and connected == 1:
             inactive_users = get_inactive_users()
             print_structured_list(inactive_users, "Utilisateurs qui n'ont pas publié")
@@ -276,7 +271,7 @@ def main():
         elif request == CMD_HIGH_SPENDERS and connected == 1:
             high_spenders = get_high_spenders()
             print_structured_list(high_spenders, "Utilisateurs ayant dépenses > solde actuel")
-        elif request == CMD_DECONNECTION:
+        elif request == CMD_DISCONNECTION:
             current_user = None
             connected = 0
             print("Déconnecté avec succès")
@@ -300,8 +295,7 @@ def main():
                 if current_user is not None:
                     connected = 1
             else:
-                print("Veuillez vous connecter")
-                show_pause = False
+                print("Commande invalide.")
         else:
             print("Commande invalide.")
         if is_active and show_pause:
@@ -309,4 +303,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        connection.close()
+        print("\nAu revoir !")

@@ -10,18 +10,15 @@ from users import add_points
 def publish_summary(author_id: int, mnemonic: str, title: str, desc: str, file_path: str, visibility="private") -> bool:
     if connection.is_connected():
         cursor = connection.cursor(dictionary=True)
-
         try:
             with open(file_path, 'rb') as f:
                 file_content = f.read()
         except Exception as e:
             print(f"Impossible de lire le fichier : {e}")
             return False
-
         file_query = "INSERT INTO Files (Name, Size, Content) VALUES (%s, %s, %s)"
         file_name = f"{author_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         file_params = (file_name, len(file_content), file_content)
-
         query = "INSERT INTO Summary (SID, AuthorID, FileID, Course, PublicationDate, Title, Description, Version, Visibility) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
         try:
             cursor.execute(file_query, file_params)
@@ -38,7 +35,6 @@ def publish_summary(author_id: int, mnemonic: str, title: str, desc: str, file_p
         finally:
             cursor.close()
 
-
 def get_course_summaries(mnemonic: str, author_id=-1) -> list[dict]:
     if author_id == -1:
         query = "SELECT * FROM Summary WHERE Course = %s AND Visibility = 'public'"
@@ -47,7 +43,6 @@ def get_course_summaries(mnemonic: str, author_id=-1) -> list[dict]:
         query = "SELECT * FROM Summary WHERE Course = %s AND AuthorID = %s"
         params = (mnemonic, author_id)
     return execute_select(query, params)
-
 
 def rate_summary(user_id: int, summary_id: int, rating: int, comment: str) -> None:
     is_own = execute_select_one("SELECT SID FROM Summary WHERE SID = %s AND AuthorID = %s", (summary_id, user_id))
@@ -64,7 +59,6 @@ def rate_summary(user_id: int, summary_id: int, rating: int, comment: str) -> No
         print(f"Note {rating} publiée avec succès !")
         add_points(ACTION_RATE_SUMMARY, user_id)
 
-
 def get_own_summaries(author_id: int) -> list[dict]:
     query = """
         SELECT *
@@ -73,7 +67,6 @@ def get_own_summaries(author_id: int) -> list[dict]:
         ORDER BY PublicationDate DESC
     """
     return execute_select(query, (author_id,))
-
 
 def update_summary(summary_id: int, author_id: int, new_title: str, new_desc: str) -> bool:
     query = """
@@ -92,7 +85,6 @@ def update_summary(summary_id: int, author_id: int, new_title: str, new_desc: st
         print(f"Résumé {summary_id} modifié avec succès !")
         return True
 
-
 def delete_summary(summary_id: int, author_id: int) -> bool:
     query = "DELETE FROM Summary WHERE SID = %s AND AuthorID = %s"
     params = (summary_id, author_id)
@@ -101,17 +93,16 @@ def delete_summary(summary_id: int, author_id: int) -> bool:
         return True
     return False
 
-
 def download_summary(summary_id: int, user_id: int, download_path: str) -> None:
     query = """
         SELECT f.Name, f.Content
         FROM Files f, Summary s
-        WHERE s.FileID=f.FID AND s.SID=%s AND (s.AuthorID=%s OR s.Visibility='public' OR s.Visibility='restricted')
+        WHERE s.FileID = f.FID AND s.SID = %s AND (s.AuthorID = %s OR s.Visibility = 'public' OR s.Visibility = 'restricted')
     """
     params = (summary_id, user_id)
     file_data = execute_select_one(query, params)
     if file_data is None:
-        print("Vous n'avez pas accès à ce fichier ou le fichier est inexistant")
+        print("Vous n'avez pas accès à ce résumé.")
         return
     if download_path == "":
         download_path = file_data['Name']
@@ -127,7 +118,6 @@ def download_summary(summary_id: int, user_id: int, download_path: str) -> None:
         print(f"Impossible d'écrire dans ce dossier : {e}")
         return
     print(f"Fichier enregistré sur {download_path}")
-
 
 def get_top_rated_summaries() -> list[dict]:
     query = """
@@ -150,7 +140,6 @@ def get_top_rated_summaries() -> list[dict]:
     """
     return execute_select(query)
 
-
 def get_top_course() -> dict | None:
     query = """
         SELECT Course, COUNT(*) as nb_resumes
@@ -159,7 +148,6 @@ def get_top_course() -> dict | None:
         ORDER BY nb_resumes DESC LIMIT 1
     """
     return execute_select_one(query)
-
 
 def get_average_summary_per_user() -> dict | None:
     query = """
