@@ -8,6 +8,9 @@
 # -o pipefail : Protège les erreurs masquées dans les pipelines
 set -euo pipefail
 
+set -a
+source .env
+set +a
 # Fonction de nettoyage et de gestion des erreurs
 declencher_erreur() {
     local ligne_erreur=$1
@@ -42,12 +45,12 @@ pip install mysql-connector-python bcrypt --quiet
 echo -e "\nConnexion à la base de données :"
 
 # Saisie du nom d'utilisateur (avec une valeur par défaut 'root' pour aller vite)
-read -p "  Nom d'utilisateur MariaDB [root] : " username
-username=${username:-root}
+#read -p "  Nom d'utilisateur MariaDB [root] : " username
+#username=${username:-root}
 
 # Saisie du mot de passe masquée (-s)
-read -s -p "  Mot de passe : " password
-echo "" # Saut de ligne requis après un read -s
+#read -s -p "  Mot de passe : " password
+#echo "" # Saut de ligne requis après un read -s
 
 # ==============================================================================
 # 3. BASE DE DONNÉES MARIADB
@@ -60,13 +63,13 @@ if [ ! -f "ProjetBdd.sql" ]; then
 fi
 
 # Utilisation de MYSQL_PWD pour éviter de passer le mot de passe en clair dans les processus
-export MYSQL_PWD="$password"
+#export MYSQL_PWD="$password"
 
 # Exécution de l'import (on ajoute -v pour un retour visuel si besoin, ou on laisse tel quel)
-mariadb -u "$username" < ProjetBdd.sql
+mariadb -u "$DB_USER" < ProjetBdd.sql
 
 # Nettoyage de la variable d'environnement par sécurité
-unset MYSQL_PWD
+#unset MYSQL_PWD
 
 echo "Base de données initialisée avec succès."
 
@@ -82,8 +85,8 @@ if [ ! -f "parsing.py" ] || [ ! -f "main.py" ]; then
 fi
 
 echo "  Lancement de parsing.py..."
-python3 parsing.py "$username" "$password"
+python3 parsing.py "$DB_USER" "$DB_PASS"
 
 echo "  Lancement de main.py..."
 # Correction ici : utilisation constante de 'python3' pour éviter les conflits hors du venv
-python3 main.py "$username" "$password"
+python3 main.py "$DB_USER" "$DB_PASS"
