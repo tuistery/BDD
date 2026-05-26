@@ -139,8 +139,22 @@ def main():
             if mnemonic:
                 print_structured_list(get_course_summaries(mnemonic), f"Résumés du cours {mnemonic}")
         elif request == CMD_MY_SUMMARIES and connected == 1:
-            entry = input("Mnémonique du cours : ").strip().upper()
-            print_structured_list(get_course_summaries(entry, current_user.get_id()), f"Mes résumés du cours {entry}")
+            mnemonic = None
+            while True:
+                entry = input("Mnémonique du cours : ").strip()
+                if not entry:
+                    print("Veuillez entrer un mnémonique.")
+                    continue
+                if entry.lower() == "annuler":
+                    show_pause = False
+                    break
+                mnemonic = entry.upper()
+                if get_course_by_mnemonic(mnemonic):
+                    break
+                print(f"Le cours '{entry}' n'existe pas. Réessayer.")
+                print("Tapez 'annuler' pour revenir.")
+            if mnemonic:
+                print_structured_list(get_course_summaries(mnemonic, current_user.get_id()), f"Mes résumés du cours {mnemonic}")
         elif request == CMD_RATE_SUMMARY and connected == 1:
             entry = input("Mnémonique du cours : ").strip().upper()
             list_course = get_course_summaries(entry)
