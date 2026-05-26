@@ -66,7 +66,7 @@ fi
 #export MYSQL_PWD="$password"
 
 # Exécution de l'import (on ajoute -v pour un retour visuel si besoin, ou on laisse tel quel)
-mariadb -u "$DB_USER" < ProjetBdd.sql
+mariadb -u "$DB_USER" -p"$DB_PASS" < ProjetBdd.sql
 
 # Nettoyage de la variable d'environnement par sécurité
 #unset MYSQL_PWD

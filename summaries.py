@@ -50,6 +50,14 @@ def get_course_summaries(mnemonic: str, author_id=-1) -> list[dict]:
 
 
 def rate_summary(user_id: int, summary_id: int, rating: int, comment: str) -> None:
+    is_own = execute_select_one("SELECT SID FROM Summary WHERE SID = %s AND AuthorID = %s", (summary_id, user_id))
+    if is_own:
+        print("Vous ne pouvez pas noter votre propre résumé.")
+        return
+    already_rated = execute_select_one("SELECT NID FROM Notes WHERE UID = %s AND SID = %s", (user_id, summary_id))
+    if already_rated:
+        print("Vous avez déjà noté ce résumé.")
+        return
     query = "INSERT INTO Notes (NID, UID, SID, Note, Comment) VALUES (%s, %s, %s, %s, %s)"
     params = (get_next_id("Notes", "NID"), user_id, summary_id, rating, comment)
     if execute_write(query, params) != -1:

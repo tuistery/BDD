@@ -158,16 +158,43 @@ def main():
             if mnemonic:
                 print_structured_list(get_course_summaries(mnemonic, current_user.get_id()), f"Mes résumés du cours {mnemonic}")
         elif request == CMD_RATE_SUMMARY and connected == 1:
-            entry = input("Mnémonique du cours : ").strip().upper()
-            list_course = get_course_summaries(entry)
-            print_structured_list(list_course, f"Résumés à noter ({entry})")
-            summary_id = int(input("ID du résumé que vous voulez noter : "))
-            if summary_id not in [int(item["SID"]) for item in list_course]:
-                print("Résumé invalide.")
-            else:
-                rate = int(input("Note : "))
-                comment = input("Commentaire : ")
-                rate_summary(current_user.get_id(), summary_id, rate, comment)
+            mnemonic = None
+            while True:
+                entry = input("Mnémonique du cours : ").strip()
+                if not entry:
+                    print("Veuillez entrer un mnémonique.")
+                    continue
+                if entry.lower() == "annuler":
+                    mnemonic = None
+                    show_pause = False
+                    break
+                mnemonic = entry.upper()
+                if get_course_by_mnemonic(mnemonic):
+                    break
+                print(f"Le cours '{entry}' n'existe pas. Réessayer.")
+                print("Tapez 'annuler' pour revenir.")
+            if mnemonic:
+                list_course = get_course_summaries(mnemonic)
+                print_structured_list(list_course, f"Résumés à noter ({mnemonic})")
+                if list_course:
+                    while True:
+                        try:
+                            summary_id = int(input("ID du résumé que vous voulez noter : "))
+                            if summary_id in [int(item["SID"]) for item in list_course]:
+                                break
+                            print("ID invalide. Réessayez.")
+                        except ValueError:
+                            print("Veuillez entrer un nombre entier.")
+                    while True:
+                        try:
+                            rate = int(input("Note (0-5) : "))
+                            if 0 <= rate <= 5:
+                                break
+                            print("Note invalide. Entrez un nombre entre 0 et 5.")
+                        except ValueError:
+                            print("Veuillez entrer un nombre entier.")
+                    comment = input("Commentaire : ")
+                    rate_summary(current_user.get_id(), summary_id, rate, comment)
         elif request == CMD_INVENTORY and connected == 1:
             print_structured_list(get_inventory(current_user.get_id()), "Mon inventaire")
         elif request == CMD_ACTIVATE_TITLE and connected == 1:
