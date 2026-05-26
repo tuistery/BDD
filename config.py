@@ -10,11 +10,9 @@ connection = mysql.connector.connect(
 )
 
 # Constantes pour le menu
-CMD_CONNECT = "connexion"
 CMD_EXIT = "quitter"
-
-CMD_LOGIN = "connecter"
-CMD_REGISTER = "inscrire"
+CMD_LOGIN = "connexion"
+CMD_REGISTER = "inscription"
 
 CMD_PROFIL = "profil"
 CMD_HISTORY = "historique"

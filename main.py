@@ -15,7 +15,8 @@ def show_commands(connected: int) -> None:
     print("=" * 64)
     if connected == 0:
         print("  Session")
-        print("   - connexion       : se connecter / s'inscrire")
+        print("   - connexion       : se connecter")
+        print("   - inscription     : s'inscrire")
         print("   - quitter         : quitter l'application")
     else:
         print("  Utilisateur")
@@ -58,16 +59,15 @@ def main():
         request = input("Votre commande > ").strip().lower()
         show_pause = True
 
-        if request == CMD_CONNECT and connected == 0:
-            auth_choice = input("inscrire ou connecter : ").strip().lower()
-            if auth_choice == CMD_REGISTER:
+        if connected == 0:
+            if request == CMD_REGISTER:
                 email = input("Email : ")
                 username = input("Utilisateur : ")
                 password = input("Mot de passe : ")
                 current_user = register(username, password, email)
                 if current_user is not None:
                     connected = 1
-            elif auth_choice == CMD_LOGIN:
+            elif request == CMD_LOGIN:
                 username = input("Utilisateur : ")
                 password = input("Mot de passe : ")
                 current_user = login(username, password)
