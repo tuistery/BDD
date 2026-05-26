@@ -3,6 +3,7 @@ from datetime import date, datetime
 import bcrypt
 import sys
 import os
+import getpass
 
 # Connexion globale
 connection = mysql.connector.connect(
@@ -722,13 +723,13 @@ def main():
             if auth_choice == CMD_REGISTER:
                 email = input("Email : ")
                 username = input("Utilisateur : ")
-                password = input("Mot de passe : ")
+                password = getpass.getpass("Mot de passe : ")
                 current_user = register(username, password, email)
                 if current_user != None:
                     connected = 1
             elif auth_choice == CMD_LOGIN:
                 username = input("Utilisateur : ")
-                password = input("Mot de passe : ")
+                password = getpass.getpass("Mot de passe : ")
                 current_user = login(username, password)
                 if current_user != None:
                     connected = 1

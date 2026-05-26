@@ -1,4 +1,5 @@
 import os
+import getpass
 
 from config import *
 from helpers import *
@@ -240,13 +241,13 @@ def main():
             if request == CMD_REGISTER:
                 email = input("Email : ")
                 username = input("Utilisateur : ")
-                password = input("Mot de passe : ")
+                password = getpass.getpass("Mot de passe : ")
                 current_user = register(username, password, email)
                 if current_user is not None:
                     connected = 1
             elif request == CMD_LOGIN:
                 username = input("Utilisateur : ")
-                password = input("Mot de passe : ")
+                password = getpass.getpass("Mot de passe : ")
                 current_user = login(username, password)
                 if current_user is not None:
                     connected = 1
