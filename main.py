@@ -59,21 +59,7 @@ def main():
         request = input("Votre commande > ").strip().lower()
         show_pause = True
 
-        if connected == 0:
-            if request == CMD_REGISTER:
-                email = input("Email : ")
-                username = input("Utilisateur : ")
-                password = input("Mot de passe : ")
-                current_user = register(username, password, email)
-                if current_user is not None:
-                    connected = 1
-            elif request == CMD_LOGIN:
-                username = input("Utilisateur : ")
-                password = input("Mot de passe : ")
-                current_user = login(username, password)
-                if current_user is not None:
-                    connected = 1
-        elif request == CMD_LIST_COURSES and connected == 1:
+        if request == CMD_LIST_COURSES and connected == 1:
             print_structured_list(get_list_courses(), "Liste des cours")
         elif request == CMD_ADD_COURSE and connected == 1:
             mnemonic = input("Mnémonique : ").strip().upper()
@@ -251,8 +237,22 @@ def main():
             connection.close()
             print("Au revoir !")
         elif connected == 0:
-            print("Veuillez vous connecter")
-            show_pause = False
+            if request == CMD_REGISTER:
+                email = input("Email : ")
+                username = input("Utilisateur : ")
+                password = input("Mot de passe : ")
+                current_user = register(username, password, email)
+                if current_user is not None:
+                    connected = 1
+            elif request == CMD_LOGIN:
+                username = input("Utilisateur : ")
+                password = input("Mot de passe : ")
+                current_user = login(username, password)
+                if current_user is not None:
+                    connected = 1
+            else:
+                print("Veuillez vous connecter")
+                show_pause = False
         else:
             print("Commande invalide.")
         if is_active and show_pause:
