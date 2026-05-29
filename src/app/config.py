@@ -10,13 +10,18 @@ else :
     user = input("Nom d'utilisateur MariaDB [root] : ") or "root"
     password = getpass("Mot de passe : ")
 
-connection = mysql.connector.connect(
-    host='localhost',
-    database='ProjetBdd',
-    user=user,
-    password=password
-)
-print("Connexion réussie à la base de données")
+try :
+    connection = mysql.connector.connect(
+        host='localhost',
+        database='ProjetBdd',
+        user=user,
+        password=password
+    )
+    print("Connexion réussie à la base de données")
+    
+except mysql.connector.Error as err:
+    print(f"[ERREUR] Connexion impossible : {err}", file=sys.stderr)
+    sys.exit(1)
 
 # Constantes pour le menu
 CMD_LOGIN = "connexion"

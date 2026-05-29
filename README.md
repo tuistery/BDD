@@ -5,34 +5,15 @@
 - Python 3.x
 - MySQL en cours d'exécution en local
 
-## Installation
-
-1. Créer et activer l'environnement virtuel :
-
-```bash
-python -m venv venv
-source venv/bin/activate
-```
-
-2. Installer les dépendances :
-
-```bash
-pip install mysql-connector-python bcrypt
-```
-
 ## Initier la base de données
 
-Créer (ou réinitialiser) la base de données :
+Lancer toutes les commandes depuis la racine du projet.
 
+Pour (ré)initialiser l'application :
 ```bash
-mariadb -u username -p ProjetBdd < ProjetBdd.sql
+./init.sh
 ```
-
-Peupler la base avec les données de départ :
-
-```bash
-python Parsing.py mariadb_username mariadb_password
-```
+Le script lancera l'application automatiquement
 
 ## Lancer l'application
 
