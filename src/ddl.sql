@@ -3,9 +3,9 @@
 -- Basé sur le diagramme fourni
 -- ============================================
 
-DROP DATABASE IF EXISTS ProjetBdd;
-CREATE DATABASE ProjetBdd CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE ProjetBdd;
+DROP DATABASE IF EXISTS AppDb;
+CREATE DATABASE AppDb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE AppDb;
 
 -- ============================================
 -- TABLES PRINCIPALES

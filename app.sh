@@ -14,7 +14,15 @@ else
     exit 1
 fi
 
-# 2. Vérification de la présence des variables requises
+# 2. Utiliser l'environnement virtuel
+if [ -d "venv" ]; then
+    source venv/bin/activate
+else 
+    echo "[ERREUR] L'environnement virtuel est introuvable ou manquant."
+    exit 1
+fi
+
+# 3. Vérification de la présence des variables requises
 if [ -z "${DB_USER:-}" ] || [ -z "${DB_PASS:-}" ]; then
     echo "[ERREUR] Les variables DB_USER ou DB_PASS ne sont pas définies dans le fichier $FICHIER_ENV."
     exit 1

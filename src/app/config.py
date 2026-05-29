@@ -13,12 +13,12 @@ else :
 try :
     connection = mysql.connector.connect(
         host='localhost',
-        database='ProjetBdd',
+        database = 'AppDb',
         user=user,
         password=password
     )
     print("Connexion réussie à la base de données")
-    
+
 except mysql.connector.Error as err:
     print(f"[ERREUR] Connexion impossible : {err}", file=sys.stderr)
     sys.exit(1)

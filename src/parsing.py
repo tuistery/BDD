@@ -12,7 +12,7 @@ PDF_PATH = "./data/placeholder.pdf"
 
 connection = mysql.connector.connect(
     host='localhost',
-    database='ProjetBdd',
+    database='AppDb',
     user=sys.argv[1],
     password=sys.argv[2]
 )
