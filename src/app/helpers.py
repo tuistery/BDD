@@ -5,7 +5,6 @@ from config import connection
 def print_structured_list(items, title="Résultats") -> None:
     """Affiche proprement une liste de dictionnaires ou un dictionnaire sous forme de tableau."""
     print(f"\n=== {title} ===")
-    print(items)
     if not items:
         print("Aucun résultat.")
         return
