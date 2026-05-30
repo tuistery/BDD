@@ -16,14 +16,14 @@ def publish_summary(author_id: int, mnemonic: str, title: str, desc: str, file_p
         except Exception as e:
             print(f"Impossible de lire le fichier : {e}")
             return False
-        file_query = "INSERT INTO Files (Name, Size, Content) VALUES (%s, %s, %s)"
+        sid = get_next_id("Summary", "SID")
+        file_query = "INSERT INTO Files (SID, Name, Size, Content) VALUES (%s, %s, %s, %s)"
         file_name = f"{author_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-        file_params = (file_name, len(file_content), file_content)
-        query = "INSERT INTO Summary (SID, AuthorID, FileID, Course, PublicationDate, Title, Description, Version, Visibility) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        file_params = (sid, file_name, len(file_content), file_content)
+        query = "INSERT INTO Summary (SID, AuthorID, Course, PublicationDate, Title, Description, Version, Visibility) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+        params = (sid, author_id, file_id, mnemonic, date.today(), title, desc, "1.0", visibility)
         try:
             cursor.execute(file_query, file_params)
-            file_id = cursor.lastrowid
-            params = (get_next_id("Summary", "SID"), author_id, file_id, mnemonic, date.today(), title, desc, "1.0", visibility)
             cursor.execute(query, params)
             connection.commit()
             print(f"Résumé avec le titre : {title} a été enregistré pour le cours {mnemonic} avec succès !")
@@ -97,9 +97,9 @@ def download_summary(summary_id: int, user_id: int, download_path: str) -> None:
     query = """
         SELECT f.Name, f.Content
         FROM Files f, Summary s
-        WHERE s.FileID = f.FID AND s.SID = %s AND (s.AuthorID = %s OR s.Visibility = 'public' OR s.Visibility = 'restricted')
+        WHERE f.SID = %s AND s.SID = %s AND (s.AuthorID = %s OR s.Visibility = 'public' OR s.Visibility = 'restricted')
     """
-    params = (summary_id, user_id)
+    params = (summary_id, summary_id, user_id)
     file_data = execute_select_one(query, params)
     if file_data is None:
         print("Vous n'avez pas accès à ce résumé.")

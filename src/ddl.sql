@@ -46,21 +46,10 @@ CREATE TABLE User (
     FOREIGN KEY (RankLevel) REFERENCES Levels(RankLevel) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
--- Table File
-CREATE TABLE Files (
-    FID INT AUTO_INCREMENT PRIMARY KEY,
-    Name VARCHAR(255) NOT NULL UNIQUE,
-    Type_mime VARCHAR(100) NOT NULL DEFAULT 'application/pdf',
-    Size INT NOT NULL,
-    Content LONGBLOB NOT NULL,
-    UploadDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
-
 -- Table Summary
 CREATE TABLE Summary (
     SID INT PRIMARY KEY,
     AuthorID INT NOT NULL,
-    FileID INT NOT NULL,
     Course VARCHAR(20) NOT NULL,
     PublicationDate DATE NOT NULL,
     Title VARCHAR(255) NOT NULL,
@@ -68,8 +57,18 @@ CREATE TABLE Summary (
     Version VARCHAR(20) DEFAULT '1.0',
     Visibility ENUM('public', 'private', 'restricted') DEFAULT 'private',
     FOREIGN KEY (AuthorID) REFERENCES User(UID) ON DELETE CASCADE,
-    FOREIGN KEY (Course) REFERENCES Course(Mnemonic) ON DELETE CASCADE,
-    FOREIGN KEY (FileID) REFERENCES Files(FID) ON DELETE CASCADE
+    FOREIGN KEY (Course) REFERENCES Course(Mnemonic) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Table File
+CREATE TABLE Files (
+    SID INT PRIMARY KEY,
+    Name VARCHAR(255) NOT NULL UNIQUE,
+    Type_mime VARCHAR(100) NOT NULL DEFAULT 'application/pdf',
+    Size INT NOT NULL,
+    Content LONGBLOB NOT NULL,
+    UploadDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (SID) REFERENCES Summary(SID) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Table Transaction
@@ -95,7 +94,7 @@ CREATE TABLE Notes (
 -- Table Object
 CREATE TABLE Object (
     OID INT PRIMARY KEY,
-    Price DECIMAL(10, 2) NOT NULL,
+    Price INT NOT NULL,
     Name VARCHAR(255) NOT NULL,
     Description TEXT
 ) ENGINE=InnoDB;
@@ -170,18 +169,17 @@ INSERT INTO Levels (RankLevel, XpRequired) VALUES
 (9, 3600),
 (10, 4500);
 
--- En cas de suppression d'un résumé, le fichier associé est aussi supprimé
+-- Pour la sécurité, impossible de supprimer un fichier dont le résumé associé existe toujours
 DELIMITER //
-
-CREATE TRIGGER delete_file_on_summary_delete
-BEFORE DELETE ON Summary
+CREATE TRIGGER block_file_sole_deletion
+BEFORE DELETE ON Files
 FOR EACH ROW
 BEGIN
-    IF OLD.FileID IS NOT NULL THEN
-        DELETE FROM Files WHERE FID = OLD.FileID;
+    IF EXISTS (SELECT 1 FROM Summary WHERE SID = OLD.SID) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erreur : Impossible de supprimer un fichier directement. Vous devez supprimer le résumé associé.';
     END IF;
 END //
-
 DELIMITER ;
 
 SELECT 'Base de données créée avec succès!' AS Message;

@@ -73,13 +73,12 @@ def parse_users() -> None:
             summary_counter += 1
             file_name = f"{user_id}_{summary_counter}.pdf"
             cursor.execute(
-                "INSERT IGNORE INTO Files (Name, Size, Content) VALUES (%s, %s, %s)",
-                (file_name, len(file_content), file_content)
+                "INSERT IGNORE INTO Files (SID, Name, Size, Content) VALUES (%s, %s, %s, %s)",
+                (summary_counter, file_name, len(file_content), file_content)
             )
-            file_id = cursor.lastrowid
             cursor.execute(
-                "INSERT IGNORE INTO Summary (SID, AuthorID, FileID, Course, PublicationDate, Title, Version, Visibility) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                (summary_counter, user_id, file_id, summary.find('cours').text, summary.find('datePublication').text, summary.find('titre').text, '1.0', 'public')
+                "INSERT IGNORE INTO Summary (SID, AuthorID, Course, PublicationDate, Title, Version, Visibility) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (summary_counter, user_id, summary.find('cours').text, summary.find('datePublication').text, summary.find('titre').text, '1.0', 'public')
             )
         for purchase in user.findall('achats/objet'):
             cursor.execute(
