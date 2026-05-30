@@ -99,7 +99,6 @@ CREATE TABLE Transaction (
 ) ENGINE=InnoDB;
 
 CREATE TABLE Notes (
-    NID INT,
     UID INT,
     SID INT,
     Note INT,
