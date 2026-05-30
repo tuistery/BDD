@@ -11,13 +11,6 @@ USE AppDb;
 -- TABLES PRINCIPALES
 -- ============================================
 
--- Table AcademicYear
-CREATE TABLE AcademicYear (
-    Years VARCHAR(20) PRIMARY KEY,
-    StartDate DATE,
-    EndDate DATE
-) ENGINE=InnoDB;
-
 -- Table Course
 CREATE TABLE Course (
     Mnemonic VARCHAR(20) PRIMARY KEY,
@@ -77,15 +70,6 @@ CREATE TABLE Summary (
     FOREIGN KEY (AuthorID) REFERENCES User(UID) ON DELETE CASCADE,
     FOREIGN KEY (Course) REFERENCES Course(Mnemonic) ON DELETE CASCADE,
     FOREIGN KEY (FileID) REFERENCES Files(FID) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- Table Contribution
-CREATE TABLE Contribution (
-    CID INT PRIMARY KEY,
-    UID INT NOT NULL,
-    Contribution TEXT NOT NULL,
-    Date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (UID) REFERENCES User(UID) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Table Transaction
@@ -152,63 +136,6 @@ CREATE TABLE Inventory (
 -- TABLES DE RELATIONS (Many-to-Many)
 -- ============================================
 
--- Relation Belong_to (Course - AcademicYear)
-CREATE TABLE Belong_to (
-    Mnemonic VARCHAR(20),
-    Years VARCHAR(20),
-    PRIMARY KEY (Mnemonic, Years),
-    FOREIGN KEY (Mnemonic) REFERENCES Course(Mnemonic) ON DELETE CASCADE,
-    FOREIGN KEY (Years) REFERENCES AcademicYear(Years) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- Relation Is_apply_to (Summary - Contribution)
-CREATE TABLE Is_apply_to (
-    SID INT,
-    CID INT,
-    PRIMARY KEY (SID, CID),
-    FOREIGN KEY (SID) REFERENCES Summary(SID) ON DELETE CASCADE,
-    FOREIGN KEY (CID) REFERENCES Contribution(CID) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- Relation Is_defined (Contribution - Action)
-CREATE TABLE Is_defined (
-    CID INT,
-    ActionDescription VARCHAR(255),
-    PRIMARY KEY (CID, ActionDescription),
-    FOREIGN KEY (CID) REFERENCES Contribution(CID) ON DELETE CASCADE,
-    FOREIGN KEY (ActionDescription) REFERENCES Action(Description) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- Relation Do (User - Contribution)
-CREATE TABLE Do (
-    UID INT,
-    CID INT,
-    PRIMARY KEY (UID, CID),
-    FOREIGN KEY (UID) REFERENCES User(UID) ON DELETE CASCADE,
-    FOREIGN KEY (CID) REFERENCES Contribution(CID) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- Relation Concern (Transaction - Contribution)
-CREATE TABLE Concern (
-    TID INT,
-    CID INT,
-    PRIMARY KEY (TID, CID),
-    FOREIGN KEY (TID) REFERENCES Transaction(TID) ON DELETE CASCADE,
-    FOREIGN KEY (CID) REFERENCES Contribution(CID) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- Relation Buy (Transaction - Inventory) - CORRECTION ICI !
--- La clé étrangère doit référencer TID vers Transaction.TID, pas Quantity
-CREATE TABLE Buy (
-    TID INT,
-    OID INT,
-    OwnerID INT,
-    Quantity INT NOT NULL,
-    PRIMARY KEY (TID, OID, OwnerID),
-    FOREIGN KEY (TID) REFERENCES Transaction(TID) ON DELETE CASCADE,
-    FOREIGN KEY (OID, OwnerID) REFERENCES Inventory(OID, OwnerID) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
 -- Relation Contain (Inventory - Object)
 -- Déjà gérée par la clé étrangère dans Inventory
 
@@ -220,7 +147,6 @@ CREATE INDEX idx_user_email ON User(Email);
 CREATE INDEX idx_summary_course ON Summary(Course);
 CREATE INDEX idx_summary_author ON Summary(AuthorID);
 CREATE INDEX idx_transaction_user ON Transaction(UID);
-CREATE INDEX idx_contribution_user ON Contribution(UID);
 
 INSERT INTO Action (Description, XpGain, CoinGain) VALUES
 ('Publication d''un résumé', 100, 50),
