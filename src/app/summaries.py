@@ -21,10 +21,10 @@ def publish_summary(author_id: int, mnemonic: str, title: str, desc: str, file_p
         file_name = f"{author_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         file_params = (sid, file_name, len(file_content), file_content)
         query = "INSERT INTO Summary (SID, AuthorID, Course, PublicationDate, Title, Description, Version, Visibility) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-        params = (sid, author_id, file_id, mnemonic, date.today(), title, desc, "1.0", visibility)
+        params = (sid, author_id, mnemonic, date.today(), title, desc, "1.0", visibility)
         try:
-            cursor.execute(file_query, file_params)
             cursor.execute(query, params)
+            cursor.execute(file_query, file_params)
             connection.commit()
             print(f"Résumé avec le titre : {title} a été enregistré pour le cours {mnemonic} avec succès !")
             add_points(ACTION_PUBLISH_SUMMARY, author_id)
