@@ -92,7 +92,7 @@ def parse_users() -> None:
 def parse_comments() -> None:
     cursor = connection.cursor()
     with open(COMMENTS_PATH, encoding='utf-8') as f:
-        for idx, entry in enumerate(json.load(f)['evaluations'], start=1):
+        for entry in json.load(f)['evaluations']:
             rate = entry['note']
             comment = entry['commentaire']
             course = entry['resume']['cours']
@@ -109,8 +109,8 @@ def parse_comments() -> None:
                 continue
 
             cursor.execute(
-                "INSERT IGNORE INTO Notes (NID, UID, SID, Note, Comment) VALUES (%s, %s, %s, %s, %s)",
-                (str(idx), uid_row[0], sid_row[0], rate, comment)
+                "INSERT IGNORE INTO Notes (UID, SID, Note, Comment) VALUES (%s, %s, %s, %s)",
+                (uid_row[0], sid_row[0], rate, comment)
             )
     connection.commit()
     cursor.close()
