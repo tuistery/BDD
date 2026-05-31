@@ -74,7 +74,6 @@ def login(username: str, password: str) -> DataUser | None:
             result["Points"],
             result["Xp"],
             result["Title"],
-            result["UID"]
         )
     else:
         print("Identifiant ou mot de passe incorrect.")
