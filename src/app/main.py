@@ -222,8 +222,8 @@ def cmd_edit_summary(user) -> None:
     print_structured_list(my_summaries, "Mes résumés")
     if my_summaries:
         summary_id = ask_id_from_list(my_summaries, "SID", "ID du résumé que vous voulez modifier : ")
-        new_title = input("Nouveau titre : ")
-        new_desc = input("Nouvelle description : ")
+        new_title = ask_non_empty("Nouveau titre : ", "Le titre ne peut pas être vide.")
+        new_desc = ask_non_empty("Nouvelle description : ", "La description ne peut pas être vide.")
         update_summary(summary_id, user.get_id(), new_title, new_desc)
 
 def cmd_delete_summary(user) -> None:
