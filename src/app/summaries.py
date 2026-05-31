@@ -1,23 +1,18 @@
-import mysql.connector
 import os
 from datetime import date, datetime
 
-from config import connection, ACTION_PUBLISH_SUMMARY, ACTION_RATE_SUMMARY
+from config import ACTION_PUBLISH_SUMMARY, ACTION_RATE_SUMMARY
 from helpers import execute_select, execute_select_one, execute_write, execute_write_reuse_id
 from users import add_points
 
 
 def publish_summary(author_id: int, mnemonic: str, title: str, desc: str, file_path: str, visibility="private") -> bool:
-    if not connection.is_connected():
-        return False
     try:
         with open(file_path, 'rb') as f:
             file_content = f.read()
     except Exception as e:
         print(f"Impossible de lire le fichier : {e}")
         return False
-    
-    cursor = connection.cursor()
 
     query = "INSERT INTO Summary (AuthorID, Course, PublicationDate, Title, Description, Version, Visibility) VALUES (%s, %s, %s, %s, %s, %s, %s)"
     params = (author_id, mnemonic, date.today(), title, desc, "1.0", visibility)
@@ -27,7 +22,9 @@ def publish_summary(author_id: int, mnemonic: str, title: str, desc: str, file_p
     file_params = (file_name, len(file_content), file_content)
     if execute_write_reuse_id(main_query=query, main_param=params, query1=file_query, param1=file_params) != -2 :
         print(f"Résumé avec le titre : {title} a été enregistré pour le cours {mnemonic} avec succès !")
+        add_points(ACTION_PUBLISH_SUMMARY, author_id)
         return True
+    return False
 
 def get_course_summaries(mnemonic: str, author_id=-1) -> list[dict]:
     if author_id == -1:
@@ -38,7 +35,7 @@ def get_course_summaries(mnemonic: str, author_id=-1) -> list[dict]:
         params = (mnemonic, author_id)
     return execute_select(query, params)
 
-def rate_summary(user_id: int, summary_id: int, rating: int, comment: str) -> None:
+def rate_summary(user_id: int, summary_id: int, rating: int, comment: str) -> bool:
     is_own = execute_select_one("SELECT SID FROM Summary WHERE SID = %s AND AuthorID = %s", (summary_id, user_id))
     if is_own:
         print("Vous ne pouvez pas noter votre propre résumé.")
@@ -52,6 +49,8 @@ def rate_summary(user_id: int, summary_id: int, rating: int, comment: str) -> No
     if execute_write(query1=query, param1=params) != -2:
         print(f"Note {rating} publiée avec succès !")
         add_points(ACTION_RATE_SUMMARY, user_id)
+        return True
+    return False
 
 def get_own_summaries(author_id: int) -> list[dict]:
     query = """

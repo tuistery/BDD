@@ -66,7 +66,7 @@ def parse_users() -> None:
         points = int(user.find('points').text or 0)
         title = user.find('titreActif').text
         cursor.execute(
-            "INSERT IGNORE INTO User (UID, UName, Pass, Email, RegistrationDate, Points, Xp, Title) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+            "INSERT IGNORE INTO User (UID, UName, EncryptedPassword, Email, RegistrationDate, Points, Xp, Title) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
             (user_id, username, '', email, reg_date, points, 0, title)
         )
         for summary in user.findall('resumes/resume'):

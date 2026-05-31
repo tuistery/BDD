@@ -36,7 +36,7 @@ CREATE TABLE Level (
 CREATE TABLE User (
     UID INT AUTO_INCREMENT PRIMARY KEY,
     UName VARCHAR(255) NOT NULL,
-    Pass VARCHAR(255) NOT NULL,
+    EncryptedPassword VARCHAR(255) NOT NULL,
     Email VARCHAR(255) UNIQUE NOT NULL,
     RegistrationDate DATE NOT NULL,
     Points INT DEFAULT 0,
@@ -95,7 +95,7 @@ CREATE TABLE Title (
     Label VARCHAR(255) NOT NULL,
     FOREIGN KEY (OID) REFERENCES Object(OID) ON DELETE CASCADE
 ) ENGINE=InnoDB;
-    
+
 -- Table Theme (Spécialisation de Object)
 CREATE TABLE Theme (
     OID INT PRIMARY KEY,

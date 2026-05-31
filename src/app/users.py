@@ -49,7 +49,7 @@ def register(username: str, password: str, email: str) -> DataUser | None:
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password, salt)
     current_date = date.today()
-    query = "INSERT INTO User (UName, Pass, Email, RegistrationDate, Points, Xp, Title) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    query = "INSERT INTO User (UName, EncryptedPassword, Email, RegistrationDate, Points, Xp, Title) VALUES (%s, %s, %s, %s, %s, %s, %s)"
     params = (username, hashed, email, current_date, 0, 0, "Null")
     lastrowid = execute_write(query1=query, param1=params, get_lastrow=True)
     if lastrowid >= 0 :
@@ -63,11 +63,11 @@ def login(username: str, password: str) -> DataUser | None:
     password = password.encode('utf-8')
     query = "SELECT * FROM User WHERE UName = %s"
     result = execute_select_one(query, (username,)) # Le tuple (valeur,) est important
-    if result and bcrypt.checkpw(password, result["Pass"].encode('utf-8')):
+    if result and bcrypt.checkpw(password, result["EncryptedPassword"].encode('utf-8')):
         print("Connexion réalisée avec succès !")
         return DataUser(
             result["UName"],
-            result["Pass"],
+            result["EncryptedPassword"],
             result["Email"],
             result["RegistrationDate"],
             result["Points"],
