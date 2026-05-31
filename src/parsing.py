@@ -39,15 +39,9 @@ def parse_rewards() -> None:
         desc = reward.find('description').text
         price = float(reward.find('prix').text)
         cursor.execute(
-            "INSERT IGNORE INTO Object (OID, Price, Name, Description) VALUES (%s, %s, %s, %s)",
-            (object_id, price, name, desc)
+            "INSERT IGNORE INTO Object (OID, Price, Name, Type, Description) VALUES (%s, %s, %s, %s, %s)",
+            (object_id, price, name, type, desc)
         )
-        if type == 'badge':
-            cursor.execute("INSERT IGNORE INTO Badge (OID, Symbol) VALUES (%s, %s)", (object_id, name))
-        elif type == 'titre':
-            cursor.execute("INSERT IGNORE INTO Title (OID, Label) VALUES (%s, %s)", (object_id, name))
-        elif type in ('thème', 'theme'):
-            cursor.execute("INSERT IGNORE INTO Theme (OID, Colors) VALUES (%s, %s)", (object_id, name))
     connection.commit()
     cursor.close()
 

@@ -39,11 +39,11 @@ CREATE TABLE User (
     EncryptedPassword VARCHAR(255) NOT NULL,
     Email VARCHAR(255) UNIQUE NOT NULL,
     RegistrationDate DATE NOT NULL,
-    Points INT DEFAULT 0,
-    Xp INT DEFAULT 0,
+    Points INT DEFAULT 0 NOT NULL,
+    Xp INT DEFAULT 0 NOT NULL,
     Title VARCHAR(100),
-    RankLevel INT,
-    FOREIGN KEY (RankLevel) REFERENCES Level(RankLevel) ON DELETE SET NULL
+    RankLevel INT DEFAULT 1 NOT NULL,
+    FOREIGN KEY (RankLevel) REFERENCES Level(RankLevel) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 -- Table Summary
@@ -54,8 +54,8 @@ CREATE TABLE Summary (
     PublicationDate DATE NOT NULL,
     Title VARCHAR(255) NOT NULL,
     Description TEXT,
-    Version VARCHAR(20) DEFAULT '1.0',
-    Visibility ENUM('public', 'private', 'restricted') DEFAULT 'private',
+    Version VARCHAR(20) DEFAULT '1.0' NOT NULL,
+    Visibility ENUM('public', 'private', 'restricted') DEFAULT 'private' NOT NULL,
     FOREIGN KEY (AuthorID) REFERENCES User(UID) ON DELETE CASCADE,
     FOREIGN KEY (Course) REFERENCES Course(Mnemonic) ON DELETE CASCADE
 ) ENGINE=InnoDB;
@@ -67,7 +67,7 @@ CREATE TABLE File (
     Type_mime VARCHAR(100) NOT NULL DEFAULT 'application/pdf',
     Size INT NOT NULL,
     Content LONGBLOB NOT NULL,
-    UploadDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UploadDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     FOREIGN KEY (SID) REFERENCES Summary(SID) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -77,7 +77,7 @@ CREATE TABLE Transaction (
     Description TEXT,
     UID INT NOT NULL,
     Amount INT NOT NULL,
-    Date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Date DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
     FOREIGN KEY (UID) REFERENCES User(UID) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -86,28 +86,8 @@ CREATE TABLE Object (
     OID INT PRIMARY KEY,
     Price INT NOT NULL,
     Name VARCHAR(255) NOT NULL,
+    Type VARCHAR(20),
     Description TEXT
-) ENGINE=InnoDB;
-
--- Table Title (Spécialisation de Object)
-CREATE TABLE Title (
-    OID INT PRIMARY KEY,
-    Label VARCHAR(255) NOT NULL,
-    FOREIGN KEY (OID) REFERENCES Object(OID) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- Table Theme (Spécialisation de Object)
-CREATE TABLE Theme (
-    OID INT PRIMARY KEY,
-    Colors VARCHAR(100),
-    FOREIGN KEY (OID) REFERENCES Object(OID) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- Table Badge (Spécialisation de Object)
-CREATE TABLE Badge (
-    OID INT PRIMARY KEY,
-    Symbol VARCHAR(255),
-    FOREIGN KEY (OID) REFERENCES Object(OID) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ============================================
@@ -116,7 +96,7 @@ CREATE TABLE Badge (
 CREATE TABLE Rates (
     UID INT,
     SID INT,
-    Note INT,
+    Note INT NOT NULL,
     Comment VARCHAR(255),
     PRIMARY KEY (UID, SID),
     FOREIGN KEY (UID) REFERENCES User(UID) ON DELETE CASCADE,
