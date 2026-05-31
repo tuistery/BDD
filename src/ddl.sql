@@ -23,7 +23,7 @@ CREATE TABLE Course (
 CREATE TABLE Action (
     Description VARCHAR(255) PRIMARY KEY,
     XpGain INT DEFAULT 0,
-    CoinGain INT DEFAULT 0
+    PointsGain INT DEFAULT 0
 ) ENGINE=InnoDB;
 
 -- Table Level
@@ -113,19 +113,11 @@ CREATE TABLE Owns (
     FOREIGN KEY (UID) REFERENCES User(UID) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Relation Contain (Inventory - Object)
--- Déjà gérée par la clé étrangère dans Inventory
-
 -- ============================================
--- INDEX pour améliorer les performances
+-- INITIALISATION DES TABLES
 -- ============================================
 
-CREATE INDEX idx_user_email ON User(Email);
-CREATE INDEX idx_summary_course ON Summary(Course);
-CREATE INDEX idx_summary_author ON Summary(AuthorID);
-CREATE INDEX idx_transaction_user ON Transaction(UID);
-
-INSERT INTO Action (Description, XpGain, CoinGain) VALUES
+INSERT INTO Action (Description, XpGain, PointsGain) VALUES
 ('Publication d''un résumé', 100, 50),
 ('Évaluation d''un résumé', 10, 5),
 ('Commentaire constructif reçu', 20, 10),
@@ -146,6 +138,10 @@ INSERT INTO Level (RankLevel, XpRequired) VALUES
 (8, 2800),
 (9, 3600),
 (10, 4500);
+
+-- ============================================
+-- TRIGGERS
+-- ============================================
 
 -- Pour la sécurité, impossible de supprimer un fichier dont le résumé associé existe toujours
 DELIMITER //

@@ -7,10 +7,10 @@ from data_user import DataUser
 
 
 def get_amount(desc: str) -> int:
-    query = "SELECT CoinGain FROM Action WHERE Description = %s"
+    query = "SELECT PointsGain FROM Action WHERE Description = %s"
     result = execute_select_one(query, (desc,))
     if result:
-        return result["CoinGain"]
+        return result["PointsGain"]
     return 0
 
 def add_transaction(action_type: str, user_id: int, custom_amount: int=None) -> None:
@@ -24,7 +24,7 @@ def add_points(action_type: str, user_id: int, custom_amount: int=None) -> None:
     update_query = """
         UPDATE User
         SET Xp = Xp + (SELECT XpGain FROM Action WHERE Description = %s),
-            Points = Points + (SELECT CoinGain FROM Action WHERE Description = %s)
+            Points = Points + (SELECT PointsGain FROM Action WHERE Description = %s)
         WHERE UID = %s
     """
     update_params = (action_type, action_type, user_id)
