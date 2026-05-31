@@ -11,7 +11,6 @@ USE AppDb;
 -- TABLES PRINCIPALES
 -- ============================================
 
--- Table Course
 CREATE TABLE Course (
     Mnemonic VARCHAR(20) PRIMARY KEY,
     Name VARCHAR(255) NOT NULL,
@@ -19,20 +18,17 @@ CREATE TABLE Course (
     Faculty VARCHAR(100)
 ) ENGINE=InnoDB;
 
--- Table Action
 CREATE TABLE Action (
     Description VARCHAR(255) PRIMARY KEY,
     XpGain INT DEFAULT 0,
     PointsGain INT DEFAULT 0
 ) ENGINE=InnoDB;
 
--- Table Level
 CREATE TABLE Level (
     RankLevel INT PRIMARY KEY,
     XpRequired INT NOT NULL
 ) ENGINE=InnoDB;
 
--- Table User
 CREATE TABLE User (
     UID INT AUTO_INCREMENT PRIMARY KEY,
     UName VARCHAR(255) NOT NULL,
@@ -46,7 +42,6 @@ CREATE TABLE User (
     FOREIGN KEY (RankLevel) REFERENCES Level(RankLevel) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Table Summary
 CREATE TABLE Summary (
     SID INT AUTO_INCREMENT PRIMARY KEY,
     AuthorID INT NOT NULL,
@@ -60,7 +55,6 @@ CREATE TABLE Summary (
     FOREIGN KEY (Course) REFERENCES Course(Mnemonic) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Table File
 CREATE TABLE File (
     SID INT PRIMARY KEY,
     Name VARCHAR(255) NOT NULL UNIQUE,
@@ -71,7 +65,6 @@ CREATE TABLE File (
     FOREIGN KEY (SID) REFERENCES Summary(SID) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Table Transaction
 CREATE TABLE Transaction (
     TID INT AUTO_INCREMENT PRIMARY KEY,
     Description TEXT,
@@ -81,7 +74,6 @@ CREATE TABLE Transaction (
     FOREIGN KEY (UID) REFERENCES User(UID) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Table Object
 CREATE TABLE Object (
     OID INT PRIMARY KEY,
     Price INT NOT NULL,
