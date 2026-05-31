@@ -66,6 +66,7 @@ def login(username: str, password: str) -> DataUser | None:
     if result and bcrypt.checkpw(password, result["EncryptedPassword"].encode('utf-8')):
         print("Connexion réalisée avec succès !")
         return DataUser(
+            result["UID"],
             result["UName"],
             result["EncryptedPassword"],
             result["Email"],
