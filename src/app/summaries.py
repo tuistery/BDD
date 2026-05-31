@@ -22,7 +22,7 @@ def publish_summary(author_id: int, mnemonic: str, title: str, desc: str, file_p
     query = "INSERT INTO Summary (AuthorID, Course, PublicationDate, Title, Description, Version, Visibility) VALUES (%s, %s, %s, %s, %s, %s, %s)"
     params = (author_id, mnemonic, date.today(), title, desc, "1.0", visibility)
 
-    file_query = "INSERT INTO Files (SID, Name, Size, Content) VALUES (%s, %s, %s, %s)"
+    file_query = "INSERT INTO File (SID, Name, Size, Content) VALUES (%s, %s, %s, %s)"
     file_name = f"{author_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
     file_params = (file_name, len(file_content), file_content)
     if execute_write_reuse_id(main_query=query, main_param=params, query1=file_query, param1=file_params) != -2 :
@@ -90,7 +90,7 @@ def delete_summary(summary_id: int, author_id: int) -> bool:
 def download_summary(summary_id: int, user_id: int, download_path: str) -> None:
     query = """
         SELECT f.Name, f.Content
-        FROM Files f, Summary s
+        FROM File f, Summary s
         WHERE f.SID = %s AND s.SID = %s AND (s.AuthorID = %s OR s.Visibility = 'public' OR s.Visibility = 'restricted')
     """
     params = (summary_id, summary_id, user_id)

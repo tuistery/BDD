@@ -26,8 +26,8 @@ CREATE TABLE Action (
     CoinGain INT DEFAULT 0
 ) ENGINE=InnoDB;
 
--- Table Levels
-CREATE TABLE Levels (
+-- Table Level
+CREATE TABLE Level (
     RankLevel INT PRIMARY KEY,
     XpRequired INT NOT NULL
 ) ENGINE=InnoDB;
@@ -43,7 +43,7 @@ CREATE TABLE User (
     Xp INT DEFAULT 0,
     Title VARCHAR(100),
     RankLevel INT,
-    FOREIGN KEY (RankLevel) REFERENCES Levels(RankLevel) ON DELETE SET NULL
+    FOREIGN KEY (RankLevel) REFERENCES Level(RankLevel) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- Table Summary
@@ -61,7 +61,7 @@ CREATE TABLE Summary (
 ) ENGINE=InnoDB;
 
 -- Table File
-CREATE TABLE Files (
+CREATE TABLE File (
     SID INT PRIMARY KEY,
     Name VARCHAR(255) NOT NULL UNIQUE,
     Type_mime VARCHAR(100) NOT NULL DEFAULT 'application/pdf',
@@ -95,7 +95,7 @@ CREATE TABLE Title (
     Label VARCHAR(255) NOT NULL,
     FOREIGN KEY (OID) REFERENCES Object(OID) ON DELETE CASCADE
 ) ENGINE=InnoDB;
-
+    
 -- Table Theme (Spécialisation de Object)
 CREATE TABLE Theme (
     OID INT PRIMARY KEY,
@@ -155,7 +155,7 @@ INSERT INTO Action (Description, XpGain, CoinGain) VALUES
 ('Résumé mis en favori par un tiers', 15, 10),
 ('Première connexion de la journée', 5, 2);
 
-INSERT INTO Levels (RankLevel, XpRequired) VALUES
+INSERT INTO Level (RankLevel, XpRequired) VALUES
 (1, 0),
 (2, 100),
 (3, 300),
@@ -170,7 +170,7 @@ INSERT INTO Levels (RankLevel, XpRequired) VALUES
 -- Pour la sécurité, impossible de supprimer un fichier dont le résumé associé existe toujours
 DELIMITER //
 CREATE TRIGGER block_file_sole_deletion
-BEFORE DELETE ON Files
+BEFORE DELETE ON File
 FOR EACH ROW
 BEGIN
     IF EXISTS (SELECT 1 FROM Summary WHERE SID = OLD.SID) THEN

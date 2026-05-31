@@ -33,7 +33,7 @@ class DataUser:
         """Retourne une représentation string de l'utilisateur"""
         query = """
             SELECT RankLevel
-            FROM Levels
+            FROM Level
             WHERE XpRequired <= %s
             ORDER BY XpRequired DESC
             LIMIT 1;

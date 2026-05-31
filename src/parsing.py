@@ -73,7 +73,7 @@ def parse_users() -> None:
             summary_counter += 1
             file_name = f"{user_id}_{summary_counter}.pdf"
             cursor.execute(
-                "INSERT IGNORE INTO Files (SID, Name, Size, Content) VALUES (%s, %s, %s, %s)",
+                "INSERT IGNORE INTO File (SID, Name, Size, Content) VALUES (%s, %s, %s, %s)",
                 (summary_counter, file_name, len(file_content), file_content)
             )
             cursor.execute(
