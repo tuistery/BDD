@@ -1,15 +1,11 @@
 from datetime import date
 
-from helpers import execute_select_one, get_next_id
+from helpers import execute_select_one
 
 
 class DataUser:
-    def __init__(self, username: str, password: str, email: str, registration_date=None, points=0, xp=0, title="Null", user_id=-1):
-        if user_id == -1:
-            self.user_id = get_next_id("User", "UID")
-        else:
-            self.user_id = user_id
-
+    def __init__(self, user_id, username: str, password: str, email: str, registration_date=None, points=0, xp=0, title="Null"):
+        self.user_id = user_id
         self.username = username
         self.email = email
         self.password = password

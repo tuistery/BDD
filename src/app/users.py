@@ -2,7 +2,7 @@ import bcrypt
 from datetime import date, datetime
 
 from config import ACTION_REGISTER
-from helpers import execute_select, execute_select_one, execute_write, get_next_id
+from helpers import execute_select, execute_select_one, execute_write
 from data_user import DataUser
 
 
@@ -14,23 +14,27 @@ def get_amount(desc: str) -> int:
     return 0
 
 def add_transaction(action_type: str, user_id: int, custom_amount: int=None) -> None:
-    query = "INSERT INTO Transaction (TID,Description,UID,Amount,Date) VALUES (%s,%s,%s,%s,%s)"
+    query = "INSERT INTO Transaction (Description,UID,Amount,Date) VALUES (%s,%s,%s,%s)"
     amount = custom_amount if custom_amount is not None else get_amount(action_type)
-    params = (get_next_id("Transaction", "TID"), action_type, user_id, amount, datetime.now())
-    if execute_write(query, params) != -1:
+    params = (action_type, user_id, amount, datetime.now())
+    if execute_write(query1=query, param1=params) == -2:
         print(f"Ajout de la transaction de l'utilisateur {user_id} avec succès !")
 
 def add_points(action_type: str, user_id: int, custom_amount: int=None) -> None:
-    query = """
+    update_query = """
         UPDATE User
         SET Xp = Xp + (SELECT XpGain FROM Action WHERE Description = %s),
             Points = Points + (SELECT CoinGain FROM Action WHERE Description = %s)
         WHERE UID = %s
     """
-    params = (action_type, action_type, user_id)
-    if execute_write(query, params) != -1:
+    update_params = (action_type, action_type, user_id)
+    
+    transaction_query = "INSERT INTO Transaction (Description,UID,Amount,Date) VALUES (%s,%s,%s,%s)"
+    amount = custom_amount if custom_amount is not None else get_amount(action_type)
+    transaction_params = (action_type, user_id, amount, datetime.now())
+
+    if execute_write(query1=update_query, param1=update_params, query2=transaction_query, param2=transaction_params) != -2:
         print(f"Ajout des points et de l'XP à l'utilisateur {user_id} avec succès !")
-        add_transaction(action_type, user_id, custom_amount)
 
 def register(username: str, password: str, email: str) -> DataUser | None:
     already_exists = execute_select_one(
@@ -44,10 +48,12 @@ def register(username: str, password: str, email: str) -> DataUser | None:
     password = password.encode('utf-8')
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password, salt)
-    new_user = DataUser(username, hashed, email, date.today())
-    query = "INSERT INTO User (UID, UName, Pass, Email, RegistrationDate, Points, Xp, Title) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-    params = (new_user.get_id(), new_user.get_username(), new_user.password, new_user.get_email(), new_user.date, new_user.get_points(), new_user.get_xp(), new_user.get_title())
-    if execute_write(query, params) != -1:
+    current_date = date.today()
+    query = "INSERT INTO User (UName, Pass, Email, RegistrationDate, Points, Xp, Title) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    params = (username, hashed, email, current_date, 0, 0, "Null")
+    lastrowid = execute_write(query1=query, param1=params, get_lastrow=True)
+    if lastrowid >= 0 :
+        new_user = DataUser(lastrowid, username, hashed, email, current_date)
         add_points(ACTION_REGISTER, new_user.get_id())
         new_user.reload_user()
         return new_user

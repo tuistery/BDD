@@ -12,5 +12,5 @@ def get_course_by_mnemonic(mnemonic: str) -> dict | None:
 def add_course(mnemonic: str, name: str, faculty: str, credits: int) -> None:
     query = "INSERT INTO Course (Mnemonic,Name,Faculty,Credits) VALUES (%s, %s, %s, %s)"
     params = (mnemonic, name, faculty, credits)
-    if execute_write(query, params) != -1:
+    if execute_write(query1=query, param1=params) != -2:
         print(f"Cours {name} enregistré avec succès !")

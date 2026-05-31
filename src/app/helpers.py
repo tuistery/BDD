@@ -1,7 +1,6 @@
 import mysql.connector
 from config import connection
 
-
 def print_structured_list(items, title="Résultats") -> None:
     """Affiche proprement une liste de dictionnaires ou un dictionnaire sous forme de tableau."""
     print(f"\n=== {title} ===")
@@ -75,14 +74,6 @@ def ask_yes_no(prompt: str) -> bool:
             return False
         print("Réponse invalide. Entrez 'o' ou 'n'.")
 
-def get_next_id(table, column) -> int:
-    cursor = connection.cursor()
-    query = f"SELECT COALESCE(MAX({column}), 0) + 1 FROM {table}"
-    cursor.execute(query)
-    result = cursor.fetchone()
-    cursor.close()
-    return result[0]
-
 def execute_select(query: str, params: tuple=None) -> list[dict]:
     if not connection.is_connected():
         return []
@@ -109,17 +100,67 @@ def execute_select_one(query: str, params: tuple=None) -> dict | None:
     finally:
         cursor.close()
 
-def execute_write(query: str, params: tuple=None) -> int:
+def execute_write(**kwargs) -> int:
     if not connection.is_connected():
-        return -1
-    cursor = connection.cursor(dictionary=True)
+        return -2
+    
+    numbers = set()
+    get_lastrow = False
+    for k, v in kwargs.items() :
+        if (k.startswith("query") or k.startswith("param")) and k[5:].isdigit() :
+            numbers.add(int(k[5:]))
+        elif k == "get_lastrow" and v == True :
+            get_lastrow = True
+    
+    pairs = [
+        (kwargs[f"query{num}"], kwargs.get(f"param{num}", ()))
+        for num in sorted(numbers)
+        if f"query{num}" in kwargs
+    ]
+
+    cursor = connection.cursor()
     try:
-        cursor.execute(query, params)
+        for query, params in pairs :
+            cursor.execute(query, params)
         connection.commit()
-        return cursor.rowcount
+        return cursor.lastrowid if get_lastrow else cursor.rowcount
     except mysql.connector.Error as err:
         connection.rollback()
         print(f"Erreur : {err}")
-        return -1
+        return -2
+    finally:
+        cursor.close()
+
+def execute_write_reuse_id(main_query: str, main_param: tuple, **kwargs) -> int:
+    if not connection.is_connected():
+        return -2
+    
+    numbers = set()
+    get_lastrow = False
+    for k, v in kwargs.items() :
+        if (k.startswith("query") or k.startswith("param")) and k[5:].isdigit() :
+            numbers.add(int(k[5:]))
+        elif k == "get_lastrow" and v == True :
+            get_lastrow = True
+    
+    pairs = [
+        (kwargs[f"query{num}"], kwargs.get(f"param{num}", ()))
+        for num in sorted(numbers)
+        if f"query{num}" in kwargs
+    ]
+
+    cursor = connection.cursor()
+    try:
+        cursor.execute(main_query, main_param)
+        lastrow = cursor.lastrowid
+        for query, params in pairs :
+            params = (lastrow, *params)
+            cursor.execute(query, params)
+        connection.commit()
+        return lastrow if get_lastrow else cursor.rowcount
+    except mysql.connector.Error as err:
+        connection.rollback()
+        print(f"Erreur : {err}")
+        return -2
     finally:
         cursor.close()

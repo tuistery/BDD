@@ -34,7 +34,7 @@ CREATE TABLE Levels (
 
 -- Table User
 CREATE TABLE User (
-    UID INT PRIMARY KEY,
+    UID INT AUTO_INCREMENT PRIMARY KEY,
     UName VARCHAR(255) NOT NULL,
     Pass VARCHAR(255) NOT NULL,
     Email VARCHAR(255) UNIQUE NOT NULL,
@@ -48,7 +48,7 @@ CREATE TABLE User (
 
 -- Table Summary
 CREATE TABLE Summary (
-    SID INT PRIMARY KEY,
+    SID INT AUTO_INCREMENT PRIMARY KEY,
     AuthorID INT NOT NULL,
     Course VARCHAR(20) NOT NULL,
     PublicationDate DATE NOT NULL,
@@ -73,7 +73,7 @@ CREATE TABLE Files (
 
 -- Table Transaction
 CREATE TABLE Transaction (
-    TID INT PRIMARY KEY,
+    TID INT AUTO_INCREMENT PRIMARY KEY,
     Description TEXT,
     UID INT NOT NULL,
     Amount INT NOT NULL,

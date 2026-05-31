@@ -20,7 +20,7 @@ DOSSIER_VENV="venv"
 NOM_BDD="AppDb"
 
 echo "======================================================================"
-echo "⚠️ Cette action va supprimer définitivement : ⚠️"
+echo "/!\\ Cette action va supprimer définitivement : /!\\"
 echo "  - Le fichier de configuration ($FICHIER_ENV)"
 echo "  - L'environnement virtuel Python ($DOSSIER_VENV)"
 echo "  - La base de données MariaDB ($NOM_BDD)"

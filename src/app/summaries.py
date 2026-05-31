@@ -3,37 +3,31 @@ import os
 from datetime import date, datetime
 
 from config import connection, ACTION_PUBLISH_SUMMARY, ACTION_RATE_SUMMARY
-from helpers import execute_select, execute_select_one, execute_write, get_next_id
+from helpers import execute_select, execute_select_one, execute_write, execute_write_reuse_id
 from users import add_points
 
 
 def publish_summary(author_id: int, mnemonic: str, title: str, desc: str, file_path: str, visibility="private") -> bool:
-    if connection.is_connected():
-        cursor = connection.cursor(dictionary=True)
-        try:
-            with open(file_path, 'rb') as f:
-                file_content = f.read()
-        except Exception as e:
-            print(f"Impossible de lire le fichier : {e}")
-            return False
-        sid = get_next_id("Summary", "SID")
-        file_query = "INSERT INTO Files (SID, Name, Size, Content) VALUES (%s, %s, %s, %s)"
-        file_name = f"{author_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-        file_params = (sid, file_name, len(file_content), file_content)
-        query = "INSERT INTO Summary (SID, AuthorID, Course, PublicationDate, Title, Description, Version, Visibility) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-        params = (sid, author_id, mnemonic, date.today(), title, desc, "1.0", visibility)
-        try:
-            cursor.execute(query, params)
-            cursor.execute(file_query, file_params)
-            connection.commit()
-            print(f"Résumé avec le titre : {title} a été enregistré pour le cours {mnemonic} avec succès !")
-            add_points(ACTION_PUBLISH_SUMMARY, author_id)
-            return True
-        except mysql.connector.Error as err:
-            print(f"Erreur d'insertion : {err}")
-            return False
-        finally:
-            cursor.close()
+    if not connection.is_connected():
+        return False
+    try:
+        with open(file_path, 'rb') as f:
+            file_content = f.read()
+    except Exception as e:
+        print(f"Impossible de lire le fichier : {e}")
+        return False
+    
+    cursor = connection.cursor()
+
+    query = "INSERT INTO Summary (AuthorID, Course, PublicationDate, Title, Description, Version, Visibility) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    params = (author_id, mnemonic, date.today(), title, desc, "1.0", visibility)
+
+    file_query = "INSERT INTO Files (SID, Name, Size, Content) VALUES (%s, %s, %s, %s)"
+    file_name = f"{author_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    file_params = (file_name, len(file_content), file_content)
+    if execute_write_reuse_id(main_query=query, main_param=params, query1=file_query, param1=file_params) != -2 :
+        print(f"Résumé avec le titre : {title} a été enregistré pour le cours {mnemonic} avec succès !")
+        return True
 
 def get_course_summaries(mnemonic: str, author_id=-1) -> list[dict]:
     if author_id == -1:
@@ -55,7 +49,7 @@ def rate_summary(user_id: int, summary_id: int, rating: int, comment: str) -> No
         return
     query = "INSERT INTO Notes (UID, SID, Note, Comment) VALUES (%s, %s, %s, %s)"
     params = (user_id, summary_id, rating, comment)
-    if execute_write(query, params) != -1:
+    if execute_write(query1=query, param1=params) != -2:
         print(f"Note {rating} publiée avec succès !")
         add_points(ACTION_RATE_SUMMARY, user_id)
 
@@ -75,8 +69,8 @@ def update_summary(summary_id: int, author_id: int, new_title: str, new_desc: st
         WHERE SID = %s AND AuthorID = %s
     """
     params = (new_title, new_desc, summary_id, author_id)
-    row_count = execute_write(query, params)
-    if row_count == -1:
+    row_count = execute_write(query1=query, param1=params)
+    if row_count == -2:
         return False
     elif row_count == 0:
         print("Résumé introuvable ou vous n'êtes pas l'auteur.")
@@ -88,7 +82,7 @@ def update_summary(summary_id: int, author_id: int, new_title: str, new_desc: st
 def delete_summary(summary_id: int, author_id: int) -> bool:
     query = "DELETE FROM Summary WHERE SID = %s AND AuthorID = %s"
     params = (summary_id, author_id)
-    if execute_write(query, params) != -1:
+    if execute_write(query1=query, param1=params) != -2:
         print(f"Résumé {summary_id} supprimé avec succès !")
         return True
     return False
