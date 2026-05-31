@@ -82,7 +82,7 @@ def parse_users() -> None:
             )
         for purchase in user.findall('achats/objet'):
             cursor.execute(
-                "INSERT IGNORE INTO Inventory (OID, OwnerID) SELECT OID, %s FROM Object WHERE Name = %s",
+                "INSERT IGNORE INTO Owns (UID, OID) SELECT OID, %s FROM Object WHERE Name = %s",
                 (user_id, purchase.text)
             )
     connection.commit()
@@ -109,7 +109,7 @@ def parse_comments() -> None:
                 continue
 
             cursor.execute(
-                "INSERT IGNORE INTO Notes (UID, SID, Note, Comment) VALUES (%s, %s, %s, %s)",
+                "INSERT IGNORE INTO Rates (UID, SID, Note, Comment) VALUES (%s, %s, %s, %s)",
                 (uid_row[0], sid_row[0], rate, comment)
             )
     connection.commit()

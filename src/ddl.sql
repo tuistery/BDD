@@ -81,16 +81,6 @@ CREATE TABLE Transaction (
     FOREIGN KEY (UID) REFERENCES User(UID) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
-CREATE TABLE Notes (
-    UID INT,
-    SID INT,
-    Note INT,
-    Comment VARCHAR(255),
-    PRIMARY KEY (UID, SID),
-    FOREIGN KEY (UID) REFERENCES User(UID) ON DELETE CASCADE,
-    FOREIGN KEY (SID) REFERENCES Summary(SID) ON DELETE CASCADE 
- ) ENGINE=InnoDB;
-
 -- Table Object
 CREATE TABLE Object (
     OID INT PRIMARY KEY,
@@ -120,20 +110,28 @@ CREATE TABLE Badge (
     FOREIGN KEY (OID) REFERENCES Object(OID) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Table Inventory
-CREATE TABLE Inventory (
-    OID INT,
-    OwnerID INT,
-    Quantity INT DEFAULT 1,
-    isActive BOOLEAN DEFAULT FALSE,
-    PRIMARY KEY (OID, OwnerID),
-    FOREIGN KEY (OID) REFERENCES Object(OID) ON DELETE CASCADE,
-    FOREIGN KEY (OwnerID) REFERENCES User(UID) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
 -- ============================================
 -- TABLES DE RELATIONS (Many-to-Many)
 -- ============================================
+CREATE TABLE Rates (
+    UID INT,
+    SID INT,
+    Note INT,
+    Comment VARCHAR(255),
+    PRIMARY KEY (UID, SID),
+    FOREIGN KEY (UID) REFERENCES User(UID) ON DELETE CASCADE,
+    FOREIGN KEY (SID) REFERENCES Summary(SID) ON DELETE CASCADE 
+ ) ENGINE=InnoDB;
+
+CREATE TABLE Owns (
+    UID INT,
+    OID INT,
+    Quantity INT DEFAULT 1,
+    isActive BOOLEAN DEFAULT FALSE,
+    PRIMARY KEY (UID, OID),
+    FOREIGN KEY (OID) REFERENCES Object(OID) ON DELETE CASCADE,
+    FOREIGN KEY (UID) REFERENCES User(UID) ON DELETE CASCADE
+) ENGINE=InnoDB;
 
 -- Relation Contain (Inventory - Object)
 -- Déjà gérée par la clé étrangère dans Inventory

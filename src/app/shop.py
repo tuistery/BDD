@@ -10,37 +10,37 @@ def get_shop_items() -> list[dict]:
     return execute_select(query)
 
 def get_inventory(user_id: int) -> list[dict]:
-    query = "SELECT * FROM Inventory WHERE OwnerID = %s"
+    query = "SELECT * FROM Owns WHERE OwnerID = %s"
     return execute_select(query, (user_id,))
 
 def get_owned_items(user_id: int) -> list[dict]:
     query = """
-        SELECT i.OID, t.Label, i.isActive
-        FROM Inventory i
-        JOIN Title t ON t.OID = i.OID
-        WHERE i.OwnerID = %s
-        ORDER BY i.OID
+        SELECT ow.OID, t.Label, ow.isActive
+        FROM Owns ow
+        JOIN Title t ON t.OID = ow.OID
+        WHERE ow.OwnerID = %s
+        ORDER BY ow.OID
     """
     return execute_select(query, (user_id,))
 
 def get_owned_badges(user_id: int) -> list[dict]:
     query = """
-        SELECT i.OID, o.Name, i.isActive
-        FROM Inventory i
-        JOIN Badge b ON b.OID = i.OID
-        JOIN Object o ON o.OID = i.OID
-        WHERE i.OwnerID = %s
-        ORDER BY i.OID
+        SELECT ow.OID, o.Name, ow.isActive
+        FROM Owns ow
+        JOIN Badge b ON b.OID = ow.OID
+        JOIN Object o ON o.OID = ow.OID
+        WHERE ow.OwnerID = %s
+        ORDER BY ow.OID
     """
     return execute_select(query, (user_id,))
 
 def get_active_badges(user_id: int) -> list[dict]:
     query = """
         SELECT o.Name
-        FROM Inventory i
-        JOIN Badge b ON b.OID = i.OID
-        JOIN Object o ON o.OID = i.OID
-        WHERE i.OwnerID = %s AND i.isActive = TRUE
+        FROM Owns ow
+        JOIN Badge b ON b.OID = ow.OID
+        JOIN Object o ON o.OID = ow.OID
+        WHERE ow.OwnerID = %s AND ow.isActive = TRUE
     """
     return execute_select(query, (user_id,))
 
@@ -76,7 +76,7 @@ def buy_item(user_id: int, object_id: int) -> bool:
             return False
         cursor.execute(
             """
-            INSERT INTO Inventory (OID, OwnerID, Quantity)
+            INSERT INTO Owns (OID, OwnerID, Quantity)
             VALUES (%s, %s, 1)
             ON DUPLICATE KEY UPDATE Quantity = Quantity + 1
             """,
@@ -104,9 +104,9 @@ def activate_title(user_id: int, object_id: int) -> bool:
         cursor.execute(
             """
             SELECT t.Label
-            FROM Inventory i
-            JOIN Title t ON t.OID = i.OID
-            WHERE i.OwnerID = %s AND i.OID = %s
+            FROM Owns ow
+            JOIN Title t ON t.OID = ow.OID
+            WHERE ow.OwnerID = %s AND ow.OID = %s
             """,
             (user_id, object_id)
         )
@@ -117,15 +117,15 @@ def activate_title(user_id: int, object_id: int) -> bool:
 
         cursor.execute(
             """
-            UPDATE Inventory i
-            JOIN Title t ON t.OID = i.OID
-            SET i.isActive = FALSE
-            WHERE i.OwnerID = %s
+            UPDATE Owns ow
+            JOIN Title t ON t.OID = ow.OID
+            SET ow.isActive = FALSE
+            WHERE ow.OwnerID = %s
             """,
             (user_id,)
         )
         cursor.execute(
-            "UPDATE Inventory SET isActive = TRUE WHERE OwnerID = %s AND OID = %s",
+            "UPDATE Owns SET isActive = TRUE WHERE OwnerID = %s AND OID = %s",
             (user_id, object_id)
         )
         cursor.execute(
@@ -151,10 +151,10 @@ def activate_badge(user_id: int, object_id: int) -> bool:
         cursor.execute(
             """
             SELECT b.Symbol, o.Name
-            FROM Inventory i
-            JOIN Badge b ON b.OID = i.OID
-            JOIN Object o ON o.OID = i.OID
-            WHERE i.OwnerID = %s AND i.OID = %s
+            FROM Owns ow
+            JOIN Badge b ON b.OID = ow.OID
+            JOIN Object o ON o.OID = ow.OID
+            WHERE ow.OwnerID = %s AND ow.OID = %s
             """,
             (user_id, object_id)
         )
@@ -164,7 +164,7 @@ def activate_badge(user_id: int, object_id: int) -> bool:
             return False
 
         cursor.execute(
-            "UPDATE Inventory SET isActive = TRUE WHERE OwnerID = %s AND OID = %s",
+            "UPDATE Owns SET isActive = TRUE WHERE OwnerID = %s AND OID = %s",
             (user_id, object_id)
         )
         connection.commit()
@@ -179,10 +179,10 @@ def activate_badge(user_id: int, object_id: int) -> bool:
 
 def get_top_item() -> dict | None:
     query = """
-        SELECT o.OID, o.Name, SUM(i.Quantity) as nb_achats
-        FROM Inventory i
-        JOIN Object o ON o.OID = i.OID
-        GROUP BY i.OID, o.Name
+        SELECT o.OID, o.Name, SUM(ow.Quantity) as nb_achats
+        FROM Owns ow
+        JOIN Object o ON o.OID = ow.OID
+        GROUP BY ow.OID, o.Name
         ORDER BY nb_achats DESC LIMIT 1
     """
     return execute_select_one(query)

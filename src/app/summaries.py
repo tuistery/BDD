@@ -43,11 +43,11 @@ def rate_summary(user_id: int, summary_id: int, rating: int, comment: str) -> No
     if is_own:
         print("Vous ne pouvez pas noter votre propre résumé.")
         return
-    already_rated = execute_select_one("SELECT UID, SID FROM Notes WHERE UID = %s AND SID = %s", (user_id, summary_id))
+    already_rated = execute_select_one("SELECT UID, SID FROM Rates WHERE UID = %s AND SID = %s", (user_id, summary_id))
     if already_rated:
         print("Vous avez déjà noté ce résumé.")
         return
-    query = "INSERT INTO Notes (UID, SID, Note, Comment) VALUES (%s, %s, %s, %s)"
+    query = "INSERT INTO Rates (UID, SID, Note, Comment) VALUES (%s, %s, %s, %s)"
     params = (user_id, summary_id, rating, comment)
     if execute_write(query1=query, param1=params) != -2:
         print(f"Note {rating} publiée avec succès !")
@@ -121,12 +121,12 @@ def get_top_rated_summaries() -> list[dict]:
         FROM Course c
         JOIN Summary s ON c.Mnemonic = s.Course
         JOIN (SELECT SID, AVG(Note) AS AverageNote
-              FROM Notes
+              FROM Rates
               GROUP BY SID) AS avg_notes ON s.SID = avg_notes.SID
         JOIN (SELECT s2.Course, MAX(avg_note) AS max_avg
               FROM (SELECT s2.SID, s2.Course, AVG(n2.Note) AS avg_note
                     FROM Summary s2
-                    JOIN Notes n2 ON s2.SID = n2.SID
+                    JOIN Rates n2 ON s2.SID = n2.SID
                     GROUP BY s2.SID, s2.Course) AS s2
               GROUP BY s2.Course) AS course_max ON s.Course = course_max.Course
                 AND avg_notes.AverageNote = course_max.max_avg

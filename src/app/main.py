@@ -85,6 +85,9 @@ def cmd_register():
     email = input("Email : ")
     username = input("Utilisateur : ")
     password = getpass("Mot de passe : ")
+    while not password.strip() :
+        print("Veuillez entrer un mot de passe valide")
+        password = getpass("Mot de passe : ")
     return register(username, password, email)
 
 def cmd_login():
