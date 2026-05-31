@@ -15,7 +15,7 @@ CREATE TABLE Course (
     Mnemonic VARCHAR(20) PRIMARY KEY,
     Name VARCHAR(255) NOT NULL,
     Credits INT NOT NULL,
-    Faculty VARCHAR(100)
+    Faculty VARCHAR(100) NOT NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE Action (
