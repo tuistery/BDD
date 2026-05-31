@@ -10,15 +10,15 @@ def get_shop_items() -> list[dict]:
     return execute_select(query)
 
 def get_inventory(user_id: int) -> list[dict]:
-    query = "SELECT * FROM Owns WHERE OwnerID = %s"
+    query = "SELECT * FROM Owns WHERE UID = %s"
     return execute_select(query, (user_id,))
 
 def get_owned_items(user_id: int) -> list[dict]:
     query = """
-        SELECT ow.OID, t.Label, ow.isActive
+        SELECT ow.OID, o.Name, ow.isActive
         FROM Owns ow
-        JOIN Title t ON t.OID = ow.OID
-        WHERE ow.OwnerID = %s
+        JOIN Object o ON o.OID = ow.OID
+        WHERE ow.UID = %s
         ORDER BY ow.OID
     """
     return execute_select(query, (user_id,))
@@ -27,9 +27,8 @@ def get_owned_badges(user_id: int) -> list[dict]:
     query = """
         SELECT ow.OID, o.Name, ow.isActive
         FROM Owns ow
-        JOIN Badge b ON b.OID = ow.OID
         JOIN Object o ON o.OID = ow.OID
-        WHERE ow.OwnerID = %s
+        WHERE ow.UID = %s AND o.Type = 'badge'
         ORDER BY ow.OID
     """
     return execute_select(query, (user_id,))
@@ -38,9 +37,8 @@ def get_active_badges(user_id: int) -> list[dict]:
     query = """
         SELECT o.Name
         FROM Owns ow
-        JOIN Badge b ON b.OID = ow.OID
         JOIN Object o ON o.OID = ow.OID
-        WHERE ow.OwnerID = %s AND ow.isActive = TRUE
+        WHERE ow.UID = %s AND o.Type = 'badge' AND ow.isActive = TRUE
     """
     return execute_select(query, (user_id,))
 
@@ -76,7 +74,7 @@ def buy_item(user_id: int, object_id: int) -> bool:
             return False
         cursor.execute(
             """
-            INSERT INTO Owns (OID, OwnerID, Quantity)
+            INSERT INTO Owns (OID, UID, Quantity)
             VALUES (%s, %s, 1)
             ON DUPLICATE KEY UPDATE Quantity = Quantity + 1
             """,
@@ -103,10 +101,10 @@ def activate_title(user_id: int, object_id: int) -> bool:
     try:
         cursor.execute(
             """
-            SELECT t.Label
+            SELECT o.Name
             FROM Owns ow
-            JOIN Title t ON t.OID = ow.OID
-            WHERE ow.OwnerID = %s AND ow.OID = %s
+            JOIN Object o ON o.OID = ow.OID
+            WHERE ow.UID = %s AND ow.OID = %s AND o.Type = 'titre'
             """,
             (user_id, object_id)
         )
@@ -118,22 +116,22 @@ def activate_title(user_id: int, object_id: int) -> bool:
         cursor.execute(
             """
             UPDATE Owns ow
-            JOIN Title t ON t.OID = ow.OID
+            JOIN Object o ON o.OID = ow.OID
             SET ow.isActive = FALSE
-            WHERE ow.OwnerID = %s
+            WHERE ow.UID = %s AND o.Type = 'titre'
             """,
             (user_id,)
         )
         cursor.execute(
-            "UPDATE Owns SET isActive = TRUE WHERE OwnerID = %s AND OID = %s",
+            "UPDATE Owns SET isActive = TRUE WHERE UID = %s AND OID = %s",
             (user_id, object_id)
         )
         cursor.execute(
             "UPDATE User SET Title = %s WHERE UID = %s",
-            (title_row["Label"], user_id)
+            (title_row["Name"], user_id)
         )
         connection.commit()
-        print(f"Titre activé : {title_row['Label']}")
+        print(f"Titre activé : {title_row['Name']}")
         return True
     except mysql.connector.Error as err:
         connection.rollback()
@@ -150,11 +148,10 @@ def activate_badge(user_id: int, object_id: int) -> bool:
     try:
         cursor.execute(
             """
-            SELECT b.Symbol, o.Name
+            SELECT o.Name
             FROM Owns ow
-            JOIN Badge b ON b.OID = ow.OID
             JOIN Object o ON o.OID = ow.OID
-            WHERE ow.OwnerID = %s AND ow.OID = %s
+            WHERE ow.UID = %s AND ow.OID = %s AND o.Type = 'badge'
             """,
             (user_id, object_id)
         )
@@ -164,7 +161,7 @@ def activate_badge(user_id: int, object_id: int) -> bool:
             return False
 
         cursor.execute(
-            "UPDATE Owns SET isActive = TRUE WHERE OwnerID = %s AND OID = %s",
+            "UPDATE Owns SET isActive = TRUE WHERE UID = %s AND OID = %s",
             (user_id, object_id)
         )
         connection.commit()

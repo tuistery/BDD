@@ -41,7 +41,7 @@ CREATE TABLE User (
     RegistrationDate DATE NOT NULL,
     Points INT DEFAULT 0 NOT NULL,
     Xp INT DEFAULT 0 NOT NULL,
-    Title VARCHAR(100),
+    Title VARCHAR(100) NULL,
     RankLevel INT DEFAULT 1 NOT NULL,
     FOREIGN KEY (RankLevel) REFERENCES Level(RankLevel) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
