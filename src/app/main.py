@@ -180,7 +180,7 @@ def cmd_rate_summary(user) -> bool:
     return True
 
 def cmd_activate_title(user) -> None:
-    titles = get_owned_items(user.get_id())
+    titles = get_owned_titles(user.get_id())
     print_structured_list(titles, "Mes titres")
     if titles:
         item_id = ask_id_from_list(titles, "OID", "ID du titre que vous voulez activer : ")

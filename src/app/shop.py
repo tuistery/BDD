@@ -23,6 +23,16 @@ def get_owned_items(user_id: int) -> list[dict]:
     """
     return execute_select(query, (user_id,))
 
+def get_owned_titles(user_id: int) -> list[dict]:
+    query = """
+        SELECT ow.OID, o.Name, ow.isActive
+        FROM Owns ow
+        JOIN Object o ON o.OID = ow.OID
+        WHERE ow.UID = %s AND o.Type = 'titre'
+        ORDER BY ow.OID
+    """
+    return execute_select(query, (user_id,))
+
 def get_owned_badges(user_id: int) -> list[dict]:
     query = """
         SELECT ow.OID, o.Name, ow.isActive
