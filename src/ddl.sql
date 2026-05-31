@@ -20,8 +20,8 @@ CREATE TABLE Course (
 
 CREATE TABLE Action (
     Description VARCHAR(255) PRIMARY KEY,
-    XpGain INT DEFAULT 0,
-    PointsGain INT DEFAULT 0
+    XpGain INT DEFAULT 0 NOT NULL,
+    PointsGain INT DEFAULT 0 NOT NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE Level (
